@@ -8,7 +8,7 @@ import {
   onMount,
   Show,
 } from "solid-js";
-import { Icon } from "../Icon";
+import { Icon, type IconName } from "../Icon";
 import MarkdownRenderer from "../MarkdownRenderer";
 import { desktopRequest, subscribeDesktopEvent } from "../../services/desktop";
 
@@ -31,54 +31,28 @@ interface ChatMessage {
   optimistic?: boolean;
 }
 
+type ChatToolMode =
+  "terminal" | "files" | "agents" | "skills" | "mcp" | "browser" | "settings";
+
 interface ChatRuntimeViewProps {
-  sidebarOpen?: boolean;
-  onToggleSidebar?: () => void;
+  onSelectMode?: (mode: ChatToolMode) => void;
 }
 
 type AgentMode = "build" | "plan";
+type ChatView = "home" | "session";
+
+const TOOL_LINKS: Array<{ id: ChatToolMode; label: string; icon: IconName }> = [
+  { id: "terminal", label: "终端", icon: "terminal" },
+  { id: "files", label: "文件", icon: "file-tree" },
+  { id: "agents", label: "智能体", icon: "subagent" },
+  { id: "skills", label: "技能", icon: "zap" },
+  { id: "mcp", label: "MCP", icon: "providers" },
+  { id: "browser", label: "浏览器", icon: "window-cursor" },
+  { id: "settings", label: "设置", icon: "settings-gear" },
+];
 
 const PLAN_MODE_PREFIX =
   "[OpenStar Plan Mode]\nAnalyze the request, inspect relevant context, and produce a concrete implementation plan before making changes. Do not modify files or execute destructive actions unless the user explicitly switches to Build mode.\n\n";
-
-const QUICK_TASKS: Array<{
-  title: string;
-  detail: string;
-  prompt: string;
-  mode: AgentMode;
-  icon: "search" | "warning" | "circle-check" | "task";
-}> = [
-  {
-    title: "分析仓库",
-    detail: "梳理结构、风险与下一步",
-    prompt: "分析当前仓库的架构、主要模块、质量风险和最值得优先推进的改进。",
-    mode: "plan",
-    icon: "search",
-  },
-  {
-    title: "修复问题",
-    detail: "定位根因并完成验证",
-    prompt:
-      "检查当前项目中最明确且可复现的问题，定位根因、修复并运行相关验证。",
-    mode: "build",
-    icon: "warning",
-  },
-  {
-    title: "补齐测试",
-    detail: "覆盖薄弱边界和回归风险",
-    prompt: "审查现有测试覆盖，选择一个高风险缺口补充可靠的自动化测试。",
-    mode: "build",
-    icon: "circle-check",
-  },
-  {
-    title: "规划功能",
-    detail: "先形成可执行方案",
-    prompt:
-      "针对下一项产品功能，先给出用户流程、技术方案、风险和分阶段实施计划。",
-    mode: "plan",
-    icon: "task",
-  },
-];
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -168,15 +142,14 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
   const [pageStart, setPageStart] = createSignal(0);
   const [loadingOlder, setLoadingOlder] = createSignal(false);
   const [sessionQuery, setSessionQuery] = createSignal("");
-  const [contextPanelOpen, setContextPanelOpen] = createSignal(
-    typeof window === "undefined" ? false : window.innerWidth >= 1440,
-  );
+  const [view, setView] = createSignal<ChatView>("home");
+  const [openTabIds, setOpenTabIds] = createSignal<string[]>([]);
+  const [sidePanelOpen, setSidePanelOpen] = createSignal(false);
   let requestSequence = 0;
   let messageList!: HTMLDivElement;
   let composer!: HTMLTextAreaElement;
   let followBottom = true;
 
-  const sidebarOpen = () => props.sidebarOpen !== false;
   const activeSession = createMemo(() =>
     sessions().find((session) => session.id === activeId()),
   );
@@ -202,23 +175,10 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     }
     return groups;
   });
-  const usageTotals = createMemo(() => {
-    const totals = new Map<string, number>();
-    for (const message of messages()) {
-      for (const [key, value] of Object.entries(message.usage || {})) {
-        if (!Number.isFinite(value)) continue;
-        totals.set(key, (totals.get(key) || 0) + value);
-      }
-    }
-    return [...totals.entries()].sort(([left], [right]) =>
-      left.localeCompare(right),
-    );
-  });
-  const messageCount = createMemo(
-    () => messages().filter((message) => message.role !== "system").length,
-  );
-  const userMessageCount = createMemo(
-    () => messages().filter((message) => message.role === "user").length,
+  const openTabs = createMemo(() =>
+    openTabIds()
+      .map((id) => sessions().find((session) => session.id === id))
+      .filter((session): session is ChatSession => Boolean(session)),
   );
 
   const scrollToBottom = () => {
@@ -273,8 +233,21 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
       "sessions/list",
     );
     setSessions(result.sessions);
-    if (!activeId() && result.sessions.length)
-      setActiveId(result.sessions[0].id);
+    setOpenTabIds((current) =>
+      current.filter((id) =>
+        result.sessions.some((session) => session.id === id),
+      ),
+    );
+    if (
+      activeId() &&
+      !result.sessions.some((session) => session.id === activeId())
+    ) {
+      requestSequence += 1;
+      setActiveId("");
+      setMessages([]);
+      setStreamingText("");
+      setView("home");
+    }
   };
 
   interface MessagePage {
@@ -337,12 +310,6 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     }
   };
 
-  const chooseQuickTask = (task: (typeof QUICK_TASKS)[number]) => {
-    setAgentMode(task.mode);
-    setInput(task.prompt);
-    requestAnimationFrame(() => composer?.focus());
-  };
-
   const createSession = async (name = "New Task") => {
     const result = await desktopRequest<{ session: ChatSession }>(
       "sessions/create",
@@ -351,7 +318,13 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     await loadSessions();
     requestSequence += 1;
     setSessionQuery("");
+    setOpenTabIds((current) =>
+      current.includes(result.session.id)
+        ? current
+        : [...current, result.session.id],
+    );
     setActiveId(result.session.id);
+    setView("session");
     setMessages([]);
     setStreamingText("");
     requestAnimationFrame(() => composer?.focus());
@@ -365,6 +338,35 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     setError("");
     followBottom = true;
     void loadMessages(sessionId).catch((cause) => setError(errorText(cause)));
+  };
+
+  const openSession = (sessionId: string) => {
+    setOpenTabIds((current) =>
+      current.includes(sessionId) ? current : [...current, sessionId],
+    );
+    setView("session");
+    selectSession(sessionId);
+  };
+
+  const closeSessionTab = (sessionId: string) => {
+    const current = openTabIds();
+    const index = current.indexOf(sessionId);
+    const remaining = current.filter((id) => id !== sessionId);
+    setOpenTabIds(remaining);
+    if (activeId() !== sessionId) return;
+
+    const next = remaining[Math.min(Math.max(index, 0), remaining.length - 1)];
+    if (next) {
+      setView("session");
+      selectSession(next);
+      return;
+    }
+
+    requestSequence += 1;
+    setActiveId("");
+    setMessages([]);
+    setStreamingText("");
+    setView("home");
   };
 
   const sendMessage = async (override?: string) => {
@@ -441,7 +443,7 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
         },
       );
       await loadSessions();
-      selectSession(result.session.id);
+      openSession(result.session.id);
     } catch (cause) {
       setError(errorText(cause));
     }
@@ -452,10 +454,9 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
       loadSessions(),
       loadConfig(),
       loadWorkspaceContext(),
-    ]).then(async (results) => {
+    ]).then((results) => {
       if (results[0].status === "rejected")
         setError(errorText(results[0].reason));
-      await loadMessages().catch((cause) => setError(errorText(cause)));
     });
   });
 
@@ -499,645 +500,611 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
   });
 
   return (
-    <section
-      class="oc-chat-layout"
-      classList={{
-        "is-task-sidebar-closed": !sidebarOpen(),
-        "is-context-open": contextPanelOpen(),
-      }}
-    >
-      <Show when={sidebarOpen()}>
-        <aside class="oc-task-sidebar" aria-label="Agent 任务">
-          <header class="oc-task-sidebar-header">
-            <div class="oc-workspace-identity" title={workspacePath()}>
-              <span class="oc-workspace-avatar">
-                {workspaceName(workspacePath()).slice(0, 2).toUpperCase()}
-              </span>
-              <span class="oc-workspace-copy">
-                <strong>{workspaceName(workspacePath())}</strong>
-                <small>{branch() || "local workspace"}</small>
-              </span>
-            </div>
-            <button
-              type="button"
-              class="sc-icon-button"
-              aria-label="收起任务侧栏"
-              title="收起任务侧栏"
-              onClick={() => props.onToggleSidebar?.()}
-            >
-              <Icon name="chevron-left" size="small" />
-            </button>
-          </header>
-
-          <div class="oc-task-sidebar-toolbar">
-            <label class="oc-session-search">
-              <Icon name="search" size="small" />
-              <input
-                type="search"
-                value={sessionQuery()}
-                placeholder="搜索任务"
-                aria-label="搜索 Agent 任务"
-                onInput={(event) => setSessionQuery(event.currentTarget.value)}
-              />
-            </label>
-            <button
-              type="button"
-              class="oc-new-task-button"
-              onClick={() => void createSession()}
-            >
-              <Icon name="plus-small" size="small" />
-              新建任务
-              <kbd>Ctrl N</kbd>
-            </button>
-          </div>
-
-          <div class="oc-task-groups">
-            <Show
-              when={sessionGroups().length}
-              fallback={
-                <div class="oc-task-empty">
-                  <Icon name="speech-bubble" size="medium" />
-                  <strong>
-                    {sessionQuery() ? "没有匹配任务" : "还没有任务"}
-                  </strong>
-                  <span>
-                    {sessionQuery()
-                      ? "尝试更短的关键词。"
-                      : "新建任务后，会话将保存在本地。"}
-                  </span>
-                </div>
-              }
-            >
-              <For each={sessionGroups()}>
-                {(group) => (
-                  <section class="oc-task-group">
-                    <h2>{group.label}</h2>
-                    <For each={group.sessions}>
-                      {(session) => {
-                        const isActive = () => activeId() === session.id;
-                        const isBusy = () => busySessionId() === session.id;
-                        return (
-                          <button
-                            type="button"
-                            class="oc-task-row"
-                            classList={{
-                              "is-active": isActive(),
-                              "is-busy": isBusy(),
-                            }}
-                            aria-current={isActive() ? "page" : undefined}
-                            title={session.name}
-                            onClick={() => selectSession(session.id)}
-                          >
-                            <span class="oc-task-status" aria-hidden="true" />
-                            <span class="oc-task-row-copy">
-                              <strong>{session.name}</strong>
-                              <small>
-                                {formatSessionTime(sessionTimestamp(session))}
-                              </small>
-                            </span>
-                            <Show when={isBusy()}>
-                              <span class="oc-running-mark">运行中</span>
-                            </Show>
-                          </button>
-                        );
-                      }}
-                    </For>
-                  </section>
-                )}
-              </For>
-            </Show>
-          </div>
-
-          <footer class="oc-task-sidebar-footer">
-            <span class="oc-sidebar-runtime-dot" />
-            <span>OpenStar 本地运行时</span>
-            <Icon name="shield" size="small" />
-          </footer>
-        </aside>
-      </Show>
-
-      <main class="oc-chat-main">
-        <section class="oc-session-panel">
-          <header class="oc-session-header">
-            <div class="oc-session-header-left">
-              <Show when={!sidebarOpen()}>
-                <button
-                  type="button"
-                  class="sc-icon-button"
-                  aria-label="展开任务侧栏"
-                  title="展开任务侧栏"
-                  onClick={() => props.onToggleSidebar?.()}
-                >
-                  <Icon name="layout-left" size="small" />
-                </button>
-              </Show>
-              <div class="oc-session-heading">
-                <span class="oc-session-breadcrumb">
-                  {workspaceName(workspacePath())}
-                  <Icon name="chevron-right" size="small" />
-                  Agent
+    <section class="oc-v2-shell" data-view={view()}>
+      <header class="oc-v2-titlebar" data-slot="opencode-titlebar">
+        <button
+          type="button"
+          class="oc-v2-titlebar-button oc-v2-home-button"
+          classList={{ "is-active": view() === "home" }}
+          aria-label="主页"
+          aria-pressed={view() === "home"}
+          onClick={() => setView("home")}
+        >
+          <Icon name="dot-grid" size="normal" />
+        </button>
+        <div class="oc-v2-tabs" role="tablist" aria-label="打开的会话">
+          <For each={openTabs()}>
+            {(session) => (
+              <div
+                class="oc-v2-tab"
+                classList={{
+                  "is-active":
+                    view() === "session" && activeId() === session.id,
+                  "is-busy": busySessionId() === session.id,
+                }}
+                role="tab"
+                aria-selected={
+                  view() === "session" && activeId() === session.id
+                }
+                title={session.name}
+                onClick={() => openSession(session.id)}
+              >
+                <span class="oc-v2-tab-avatar">
+                  {workspaceName(workspacePath()).slice(0, 1).toUpperCase()}
                 </span>
-                <strong>{activeSession()?.name || "新任务"}</strong>
-              </div>
-            </div>
-            <div class="oc-session-header-actions">
-              <span
-                class="oc-run-status"
-                classList={{ "is-running": Boolean(busySessionId()) }}
-              >
-                <span />
-                {busySessionId() ? "运行中" : "就绪"}
-              </span>
-              <button
-                type="button"
-                class="sc-icon-button"
-                classList={{ active: contextPanelOpen() }}
-                aria-label="切换会话上下文面板"
-                aria-pressed={contextPanelOpen()}
-                title="会话上下文"
-                onClick={() => setContextPanelOpen((value) => !value)}
-              >
-                <Icon name="file-tree" size="small" />
-              </button>
-              <button
-                type="button"
-                class="sc-icon-button"
-                aria-label="新建任务"
-                title="新建任务"
-                onClick={() => void createSession()}
-              >
-                <Icon name="new-session" size="small" />
-              </button>
-            </div>
-          </header>
-
-          <Show when={providerError() || error()}>
-            <div class="oc-notice-stack">
-              <Show when={providerError()}>
-                <Notice message={providerError()} />
-              </Show>
-              <Show when={error()}>
-                <Notice message={error()} />
-              </Show>
-            </div>
-          </Show>
-
-          <div
-            ref={messageList}
-            class="oc-message-scroller"
-            onScroll={() => {
-              const gap =
-                messageList.scrollHeight -
-                messageList.scrollTop -
-                messageList.clientHeight;
-              followBottom = gap < 96;
-            }}
-          >
-            <div class="oc-message-column">
-              <Show when={hasMore()}>
+                <span class="oc-v2-tab-title">{session.name}</span>
+                <Show when={busySessionId() === session.id}>
+                  <span class="oc-v2-tab-running" aria-label="运行中" />
+                </Show>
                 <button
                   type="button"
-                  class="oc-history-button"
-                  disabled={loadingOlder()}
-                  onClick={() => void loadOlder()}
+                  class="oc-v2-tab-close"
+                  aria-label={`关闭 ${session.name}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    closeSessionTab(session.id);
+                  }}
                 >
-                  <Icon name="clock" size="small" />
-                  {loadingOlder() ? "正在加载…" : "加载更早消息"}
+                  <Icon name="close-small" size="small" />
                 </button>
+              </div>
+            )}
+          </For>
+        </div>
+        <button
+          type="button"
+          class="oc-v2-titlebar-button"
+          aria-label="新建会话"
+          onClick={() => void createSession()}
+        >
+          <Icon name="plus" size="small" />
+        </button>
+        <div class="oc-v2-titlebar-spacer" />
+        <span
+          class="oc-v2-runtime-pill"
+          classList={{ "is-running": Boolean(busySessionId()) }}
+          title={providerLabel()}
+        >
+          <span class="oc-v2-runtime-dot" />
+          <span>
+            {busySessionId() ? "运行中" : providerLabel() || "本地运行时"}
+          </span>
+        </span>
+        <button
+          type="button"
+          class="oc-v2-titlebar-button"
+          aria-label="设置"
+          onClick={() => props.onSelectMode?.("settings")}
+        >
+          <Icon name="settings-gear" size="small" />
+        </button>
+      </header>
+
+      <Show
+        when={view() === "home"}
+        fallback={
+          <div
+            class="oc-v2-session-route"
+            classList={{ "is-side-panel-open": sidePanelOpen() }}
+          >
+            <section class="oc-v2-session-panel">
+              <header class="oc-v2-session-header">
+                <div class="oc-v2-session-heading">
+                  <span>{workspaceName(workspacePath())}</span>
+                  <strong>{activeSession()?.name || "新会话"}</strong>
+                </div>
+                <div class="oc-v2-session-actions">
+                  <span
+                    class="oc-v2-session-state"
+                    classList={{ "is-running": Boolean(busySessionId()) }}
+                  >
+                    <span />
+                    {busySessionId() ? "运行中" : "就绪"}
+                  </span>
+                  <button
+                    type="button"
+                    class="oc-v2-icon-button"
+                    classList={{ "is-active": sidePanelOpen() }}
+                    aria-label="切换文件与审查面板"
+                    aria-pressed={sidePanelOpen()}
+                    onClick={() => setSidePanelOpen((value) => !value)}
+                  >
+                    <Icon name="file-tree" size="small" />
+                  </button>
+                  <button
+                    type="button"
+                    class="oc-v2-icon-button"
+                    aria-label="新建会话"
+                    onClick={() => void createSession()}
+                  >
+                    <Icon name="new-session" size="small" />
+                  </button>
+                </div>
+              </header>
+
+              <Show when={providerError() || error()}>
+                <div class="oc-v2-notice-stack">
+                  <Show when={providerError()}>
+                    <Notice message={providerError()} />
+                  </Show>
+                  <Show when={error()}>
+                    <Notice message={error()} />
+                  </Show>
+                </div>
               </Show>
 
-              <Show
-                when={messages().length}
-                fallback={
-                  <div class="oc-chat-welcome">
-                    <div class="oc-welcome-mark">
-                      <Icon name="models" size="large" />
-                    </div>
-                    <div>
-                      <span class="oc-welcome-eyebrow">
-                        OPENCODE-STYLE AGENT WORKSPACE
-                      </span>
-                      <h1>今天要完成什么？</h1>
-                      <p>
-                        围绕单个工程任务持续工作。Build 模式负责实施和验证，Plan
-                        模式先分析再形成可执行方案。
-                      </p>
-                    </div>
-                    <div class="oc-quick-task-grid">
-                      <For each={QUICK_TASKS}>
-                        {(task) => (
-                          <button
-                            type="button"
-                            class="oc-quick-task"
-                            onClick={() => chooseQuickTask(task)}
-                          >
-                            <span class="oc-quick-task-icon">
-                              <Icon name={task.icon} size="small" />
-                            </span>
-                            <span>
-                              <strong>{task.title}</strong>
-                              <small>{task.detail}</small>
-                            </span>
-                            <span class="oc-quick-task-mode">{task.mode}</span>
-                          </button>
-                        )}
-                      </For>
-                    </div>
-                  </div>
-                }
+              <div
+                ref={messageList}
+                class="oc-v2-message-scroller"
+                onScroll={() => {
+                  const gap =
+                    messageList.scrollHeight -
+                    messageList.scrollTop -
+                    messageList.clientHeight;
+                  followBottom = gap < 96;
+                }}
               >
-                <For each={messages()}>
-                  {(message, index) => (
-                    <article
-                      class="oc-message"
-                      classList={{
-                        "is-user": message.role === "user",
-                        "is-assistant": message.role === "assistant",
-                        "is-system": message.role === "system",
-                        "is-optimistic": Boolean(message.optimistic),
-                      }}
+                <div class="oc-v2-message-column">
+                  <Show when={hasMore()}>
+                    <button
+                      type="button"
+                      class="oc-v2-history-button"
+                      disabled={loadingOlder()}
+                      onClick={() => void loadOlder()}
                     >
-                      <header class="oc-message-header">
-                        <span class="oc-message-author">
-                          {message.role === "assistant"
-                            ? "OpenStar"
-                            : message.role === "user"
-                              ? "You"
-                              : "System"}
-                        </span>
-                        <Show when={message.provider || message.model}>
-                          <span class="oc-message-model">
-                            {message.provider}
-                            {message.provider && message.model ? " / " : ""}
-                            {message.model}
+                      <Icon name="clock" size="small" />
+                      {loadingOlder() ? "正在加载…" : "加载更早消息"}
+                    </button>
+                  </Show>
+
+                  <Show
+                    when={messages().length}
+                    fallback={
+                      <div class="oc-v2-new-session">
+                        <div class="oc-v2-wordmark">
+                          <span>
+                            <Icon name="models" size="large" />
                           </span>
-                        </Show>
-                        <Show when={message.created_at}>
-                          <time
-                            dateTime={new Date(
-                              message.created_at!,
-                            ).toISOString()}
-                            title={new Date(
-                              message.created_at!,
-                            ).toLocaleString()}
-                          >
-                            {new Date(message.created_at!).toLocaleTimeString(
-                              "zh-CN",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
-                          </time>
-                        </Show>
-                        <Show when={message.optimistic}>
-                          <span class="oc-message-pending" role="status">
-                            发送中
-                          </span>
-                        </Show>
-                        <span class="oc-message-header-spacer" />
-                        <div class="oc-message-actions">
-                          <button
-                            type="button"
-                            class="sc-icon-button"
-                            aria-label="复制消息"
-                            title="复制消息"
-                            onClick={() =>
-                              void navigator.clipboard.writeText(
-                                textOf(message),
-                              )
-                            }
-                          >
-                            <Icon name="copy" size="small" />
-                          </button>
-                          <Show when={message.role === "user"}>
-                            <button
-                              type="button"
-                              class="sc-icon-button"
-                              aria-label="编辑此消息"
-                              title="编辑"
-                              onClick={() => {
-                                setInput(textOf(message));
-                                requestAnimationFrame(() => composer?.focus());
-                              }}
-                            >
-                              <Icon name="pencil-line" size="small" />
-                            </button>
-                          </Show>
-                          <Show when={message.role === "assistant"}>
-                            <button
-                              type="button"
-                              class="sc-icon-button"
-                              aria-label="重试此回复"
-                              title="重试"
-                              disabled={Boolean(busySessionId())}
-                              onClick={() => retryAt(index())}
-                            >
-                              <Icon name="reset" size="small" />
-                            </button>
-                          </Show>
-                          <button
-                            type="button"
-                            class="sc-icon-button"
-                            aria-label="从此消息创建分支"
-                            title="创建分支"
-                            onClick={() => void branchAt(message)}
-                          >
-                            <Icon name="branch" size="small" />
-                          </button>
+                          <strong>OpenStar</strong>
                         </div>
-                      </header>
-                      <div class="oc-message-body">
-                        <Show
-                          when={message.role === "assistant"}
-                          fallback={
-                            <pre class="oc-user-message-text">
-                              {textOf(message)}
-                            </pre>
-                          }
-                        >
-                          <MarkdownRenderer content={textOf(message)} />
-                        </Show>
+                        <p>输入工程任务，开始一个新的智能体会话。</p>
                       </div>
-                      <Show when={message.usage || message.finish_reason}>
-                        <footer class="oc-message-meta">
-                          <Show when={message.finish_reason}>
-                            <span>{message.finish_reason}</span>
-                          </Show>
-                          <For each={Object.entries(message.usage || {})}>
-                            {([key, value]) => (
-                              <span>
-                                {usageLabel(key)} {numberFormat.format(value)}
+                    }
+                  >
+                    <For each={messages()}>
+                      {(message, index) => (
+                        <article
+                          class="oc-v2-message"
+                          classList={{
+                            "is-user": message.role === "user",
+                            "is-assistant": message.role === "assistant",
+                            "is-system": message.role === "system",
+                            "is-optimistic": Boolean(message.optimistic),
+                          }}
+                        >
+                          <header class="oc-v2-message-header">
+                            <span class="oc-v2-message-author">
+                              {message.role === "assistant"
+                                ? "OpenStar"
+                                : message.role === "user"
+                                  ? "You"
+                                  : "System"}
+                            </span>
+                            <Show when={message.provider || message.model}>
+                              <span class="oc-v2-message-model">
+                                {message.provider}
+                                {message.provider && message.model ? " / " : ""}
+                                {message.model}
                               </span>
-                            )}
-                          </For>
-                        </footer>
-                      </Show>
+                            </Show>
+                            <Show when={message.created_at}>
+                              <time
+                                title={new Date(
+                                  message.created_at!,
+                                ).toLocaleString()}
+                              >
+                                {new Date(
+                                  message.created_at!,
+                                ).toLocaleTimeString("zh-CN", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </time>
+                            </Show>
+                            <Show when={message.optimistic}>
+                              <span class="oc-v2-message-pending">发送中</span>
+                            </Show>
+                            <span class="oc-v2-message-header-spacer" />
+                            <div class="oc-v2-message-actions">
+                              <button
+                                type="button"
+                                class="oc-v2-icon-button"
+                                aria-label="复制消息"
+                                onClick={() =>
+                                  void navigator.clipboard.writeText(
+                                    textOf(message),
+                                  )
+                                }
+                              >
+                                <Icon name="copy" size="small" />
+                              </button>
+                              <Show when={message.role === "user"}>
+                                <button
+                                  type="button"
+                                  class="oc-v2-icon-button"
+                                  aria-label="编辑此消息"
+                                  onClick={() => {
+                                    setInput(textOf(message));
+                                    requestAnimationFrame(() =>
+                                      composer?.focus(),
+                                    );
+                                  }}
+                                >
+                                  <Icon name="pencil-line" size="small" />
+                                </button>
+                              </Show>
+                              <Show when={message.role === "assistant"}>
+                                <button
+                                  type="button"
+                                  class="oc-v2-icon-button"
+                                  aria-label="重试此回复"
+                                  disabled={Boolean(busySessionId())}
+                                  onClick={() => retryAt(index())}
+                                >
+                                  <Icon name="reset" size="small" />
+                                </button>
+                              </Show>
+                              <button
+                                type="button"
+                                class="oc-v2-icon-button"
+                                aria-label="从此消息创建分支"
+                                onClick={() => void branchAt(message)}
+                              >
+                                <Icon name="branch" size="small" />
+                              </button>
+                            </div>
+                          </header>
+                          <div class="oc-v2-message-body">
+                            <Show
+                              when={message.role === "assistant"}
+                              fallback={
+                                <pre class="oc-v2-user-message">
+                                  {textOf(message)}
+                                </pre>
+                              }
+                            >
+                              <MarkdownRenderer content={textOf(message)} />
+                            </Show>
+                          </div>
+                          <Show when={message.usage || message.finish_reason}>
+                            <footer class="oc-v2-message-meta">
+                              <Show when={message.finish_reason}>
+                                <span>{message.finish_reason}</span>
+                              </Show>
+                              <For each={Object.entries(message.usage || {})}>
+                                {([key, value]) => (
+                                  <span>
+                                    {usageLabel(key)}{" "}
+                                    {numberFormat.format(value)}
+                                  </span>
+                                )}
+                              </For>
+                            </footer>
+                          </Show>
+                        </article>
+                      )}
+                    </For>
+                  </Show>
+
+                  <Show when={streamingText()}>
+                    <article
+                      class="oc-v2-message is-assistant is-streaming"
+                      aria-live="polite"
+                    >
+                      <header class="oc-v2-message-header">
+                        <span class="oc-v2-message-author">OpenStar</span>
+                        <span class="oc-v2-streaming-indicator">
+                          <span />
+                          正在响应
+                        </span>
+                      </header>
+                      <div class="oc-v2-message-body">
+                        <MarkdownRenderer content={streamingText()} />
+                      </div>
                     </article>
-                  )}
-                </For>
-              </Show>
+                  </Show>
+                </div>
+              </div>
 
-              <Show when={streamingText()}>
-                <article
-                  class="oc-message is-assistant is-streaming"
-                  aria-live="polite"
-                >
-                  <header class="oc-message-header">
-                    <span class="oc-message-author">OpenStar</span>
-                    <span class="oc-streaming-indicator">
-                      <span />
-                      正在响应
-                    </span>
-                  </header>
-                  <div class="oc-message-body">
-                    <MarkdownRenderer content={streamingText()} />
-                  </div>
-                </article>
-              </Show>
-            </div>
-          </div>
-
-          <div class="oc-composer-dock">
-            <form
-              class="oc-composer"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void sendMessage();
-              }}
-            >
-              <label class="sr-only" for="chat-composer">
-                发送给当前 Provider
-              </label>
-              <textarea
-                ref={composer}
-                id="chat-composer"
-                aria-label="发送给当前 Provider"
-                placeholder={
-                  busySessionId()
-                    ? "当前任务仍在运行…"
-                    : agentMode() === "plan"
-                      ? "描述目标，代理将先分析并给出实施计划…"
-                      : "描述需要代理完成、测试并验证的工程任务…"
-                }
-                value={input()}
-                onInput={(event) => setInput(event.currentTarget.value)}
-                onKeyDown={(event) => {
-                  if (
-                    event.key === "Enter" &&
-                    !event.shiftKey &&
-                    !event.isComposing
-                  ) {
+              <div class="oc-v2-prompt-region">
+                <form
+                  class="oc-v2-prompt-dock"
+                  onSubmit={(event) => {
                     event.preventDefault();
                     void sendMessage();
-                  }
-                }}
-              />
-              <div class="oc-composer-toolbar">
-                <div class="oc-mode-switch" aria-label="Agent execution mode">
-                  <button
-                    type="button"
-                    classList={{ active: agentMode() === "build" }}
-                    aria-pressed={agentMode() === "build"}
-                    onClick={() => setAgentMode("build")}
-                  >
-                    <Icon name="code" size="small" />
-                    Build
-                  </button>
-                  <button
-                    type="button"
-                    classList={{ active: agentMode() === "plan" }}
-                    aria-pressed={agentMode() === "plan"}
-                    onClick={() => setAgentMode("plan")}
-                  >
-                    <Icon name="task" size="small" />
-                    Plan
-                  </button>
-                </div>
-                <span class="oc-provider-chip" title={providerLabel()}>
-                  <Icon name="models" size="small" />
-                  {providerLabel() || "Provider"}
-                </span>
-                <span class="oc-composer-hint">
-                  Enter 发送 · Shift Enter 换行
-                </span>
-                <Show
-                  when={busySessionId()}
-                  fallback={
-                    <button
-                      type="submit"
-                      class="oc-send-button"
-                      disabled={!input().trim()}
-                      aria-label="发送消息"
-                    >
-                      <Icon name="arrow-up" size="small" />
-                    </button>
-                  }
+                  }}
                 >
+                  <textarea
+                    ref={composer}
+                    id="chat-composer"
+                    aria-label="发送给当前 Provider"
+                    placeholder={
+                      busySessionId()
+                        ? "当前会话仍在运行…"
+                        : agentMode() === "plan"
+                          ? "描述目标，代理将先分析并给出计划…"
+                          : "Ask anything..."
+                    }
+                    value={input()}
+                    onInput={(event) => setInput(event.currentTarget.value)}
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === "Enter" &&
+                        !event.shiftKey &&
+                        !event.isComposing
+                      ) {
+                        event.preventDefault();
+                        void sendMessage();
+                      }
+                    }}
+                  />
+                  <div class="oc-v2-prompt-toolbar">
+                    <select
+                      class="oc-v2-agent-select"
+                      aria-label="Agent mode"
+                      value={agentMode()}
+                      onChange={(event) =>
+                        setAgentMode(event.currentTarget.value as AgentMode)
+                      }
+                    >
+                      <option value="build">Build</option>
+                      <option value="plan">Plan</option>
+                    </select>
+                    <button
+                      type="button"
+                      class="oc-v2-provider-button"
+                      title={providerLabel()}
+                      onClick={() => props.onSelectMode?.("settings")}
+                    >
+                      <Icon name="models" size="small" />
+                      <span>{providerLabel() || "Select model"}</span>
+                    </button>
+                    <span class="oc-v2-prompt-hint">
+                      Enter 发送 · Shift Enter 换行
+                    </span>
+                    <Show
+                      when={busySessionId()}
+                      fallback={
+                        <button
+                          type="submit"
+                          class="oc-v2-send-button"
+                          disabled={!input().trim()}
+                          aria-label="发送消息"
+                        >
+                          <Icon name="arrow-up" size="small" />
+                        </button>
+                      }
+                    >
+                      <button
+                        type="button"
+                        class="oc-v2-stop-button"
+                        aria-label="停止生成"
+                        onClick={() => void stopGeneration()}
+                      >
+                        <Icon name="stop" size="small" />
+                      </button>
+                    </Show>
+                  </div>
+                </form>
+                <p class="oc-v2-prompt-policy">
+                  {agentMode() === "plan"
+                    ? "Plan 模式先分析和规划，不直接修改文件。"
+                    : "Build 模式可修改、执行并验证。"}
+                </p>
+              </div>
+            </section>
+
+            <Show when={sidePanelOpen()}>
+              <aside class="oc-v2-side-panel" aria-label="文件与审查">
+                <header class="oc-v2-side-panel-header">
+                  <div>
+                    <span>WORKSPACE</span>
+                    <strong>文件与审查</strong>
+                  </div>
                   <button
                     type="button"
-                    class="oc-stop-button"
-                    onClick={() => void stopGeneration()}
+                    class="oc-v2-icon-button"
+                    aria-label="关闭文件与审查面板"
+                    onClick={() => setSidePanelOpen(false)}
                   >
-                    <Icon name="stop" size="small" />
-                    停止
+                    <Icon name="close-small" size="small" />
+                  </button>
+                </header>
+                <div class="oc-v2-side-panel-body">
+                  <section>
+                    <h2>当前工作区</h2>
+                    <div class="oc-v2-project-card">
+                      <span class="oc-v2-project-avatar">
+                        {workspaceName(workspacePath())
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </span>
+                      <span>
+                        <strong>{workspaceName(workspacePath())}</strong>
+                        <small>{branch() || "local workspace"}</small>
+                      </span>
+                    </div>
+                    <p title={workspacePath()}>{workspacePath()}</p>
+                  </section>
+                  <section>
+                    <h2>工具</h2>
+                    <button
+                      type="button"
+                      onClick={() => props.onSelectMode?.("files")}
+                    >
+                      <Icon name="file-tree" size="small" />
+                      打开文件浏览器
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => props.onSelectMode?.("terminal")}
+                    >
+                      <Icon name="terminal" size="small" />
+                      打开终端
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => props.onSelectMode?.("agents")}
+                    >
+                      <Icon name="subagent" size="small" />
+                      查看智能体
+                    </button>
+                  </section>
+                </div>
+              </aside>
+            </Show>
+          </div>
+        }
+      >
+        <main class="oc-v2-home-surface">
+          <div class="oc-v2-home-grid">
+            <aside class="oc-v2-project-column" aria-label="项目">
+              <div class="oc-v2-home-section-heading">
+                <span>项目</span>
+              </div>
+              <div class="oc-v2-project-list">
+                <button
+                  type="button"
+                  class="oc-v2-project-row is-selected"
+                  title={workspacePath()}
+                >
+                  <span class="oc-v2-project-avatar">
+                    {workspaceName(workspacePath()).slice(0, 2).toUpperCase()}
+                  </span>
+                  <span>
+                    <strong>{workspaceName(workspacePath())}</strong>
+                    <small>{branch() || "local workspace"}</small>
+                  </span>
+                </button>
+              </div>
+              <div class="oc-v2-home-runtime">
+                <span class="oc-v2-runtime-dot" />
+                <span>OpenStar 本地运行时</span>
+              </div>
+              <nav class="oc-v2-utility-nav" aria-label="工作区工具">
+                <For each={TOOL_LINKS}>
+                  {(item) => (
+                    <button
+                      type="button"
+                      onClick={() => props.onSelectMode?.(item.id)}
+                    >
+                      <Icon name={item.icon} size="small" />
+                      <span>{item.label}</span>
+                    </button>
+                  )}
+                </For>
+              </nav>
+            </aside>
+
+            <section class="oc-v2-home-sessions" aria-label="最近会话">
+              <label class="oc-v2-home-search">
+                <Icon name="magnifying-glass" size="small" />
+                <input
+                  type="search"
+                  value={sessionQuery()}
+                  placeholder={`搜索 ${workspaceName(workspacePath())} 中的会话`}
+                  aria-label="搜索会话"
+                  onInput={(event) =>
+                    setSessionQuery(event.currentTarget.value)
+                  }
+                />
+                <Show when={sessionQuery()}>
+                  <button
+                    type="button"
+                    aria-label="清除搜索"
+                    onClick={() => setSessionQuery("")}
+                  >
+                    <Icon name="close-small" size="small" />
                   </button>
                 </Show>
+              </label>
+              <div class="oc-v2-home-session-toolbar">
+                <span>最近会话</span>
+                <button type="button" onClick={() => void createSession()}>
+                  <Icon name="edit" size="small" />
+                  新建会话
+                </button>
               </div>
-            </form>
-            <p class="oc-composer-policy">
-              {agentMode() === "plan"
-                ? "Plan 模式仅分析和规划，不直接修改文件。"
-                : "Build 模式可实施修改、运行命令并完成验证。"}
-            </p>
-          </div>
-        </section>
-      </main>
-
-      <Show when={contextPanelOpen()}>
-        <aside class="oc-context-panel" aria-label="会话上下文">
-          <header class="oc-context-header">
-            <div>
-              <span>CONTEXT</span>
-              <strong>会话上下文</strong>
-            </div>
-            <button
-              type="button"
-              class="sc-icon-button"
-              aria-label="关闭会话上下文"
-              onClick={() => setContextPanelOpen(false)}
-            >
-              <Icon name="close-small" size="small" />
-            </button>
-          </header>
-
-          <div class="oc-context-scroll">
-            <section class="oc-context-section">
-              <h2>当前任务</h2>
-              <div class="oc-context-task-card">
-                <span class="oc-context-task-icon">
-                  <Icon name="task" size="normal" />
-                </span>
-                <span>
-                  <strong>{activeSession()?.name || "尚未创建任务"}</strong>
-                  <small>
-                    {activeSession()
-                      ? new Date(
-                          sessionTimestamp(activeSession()!),
-                        ).toLocaleString("zh-CN")
-                      : "发送第一条消息时自动创建"}
-                  </small>
-                </span>
-              </div>
-              <div class="oc-context-stats">
-                <span>
-                  <strong>{messageCount()}</strong>
-                  消息
-                </span>
-                <span>
-                  <strong>{userMessageCount()}</strong>
-                  轮任务
-                </span>
-                <span>
-                  <strong>{agentMode() === "build" ? "Build" : "Plan"}</strong>
-                  模式
-                </span>
-              </div>
-            </section>
-
-            <section class="oc-context-section">
-              <h2>工作区</h2>
-              <dl class="oc-context-list">
-                <div>
-                  <dt>项目</dt>
-                  <dd title={workspacePath()}>
-                    {workspaceName(workspacePath())}
-                  </dd>
-                </div>
-                <div>
-                  <dt>分支</dt>
-                  <dd>{branch() || "未检测"}</dd>
-                </div>
-                <div>
-                  <dt>模型</dt>
-                  <dd title={providerLabel()}>{providerLabel() || "未配置"}</dd>
-                </div>
-              </dl>
-            </section>
-
-            <Show when={usageTotals().length}>
-              <section class="oc-context-section">
-                <h2>Token 使用</h2>
-                <dl class="oc-context-list">
-                  <For each={usageTotals()}>
-                    {([key, value]) => (
-                      <div>
-                        <dt>{usageLabel(key)}</dt>
-                        <dd>{numberFormat.format(value)}</dd>
-                      </div>
+              <div class="oc-v2-home-session-list">
+                <Show
+                  when={sessionGroups().length}
+                  fallback={
+                    <div class="oc-v2-home-empty">
+                      <Icon name="speech-bubble" size="large" />
+                      <strong>
+                        {sessionQuery() ? "没有匹配会话" : "还没有会话"}
+                      </strong>
+                      <p>
+                        {sessionQuery()
+                          ? "尝试更短的关键词。"
+                          : "创建会话后，它会显示在这里。"}
+                      </p>
+                      <Show when={!sessionQuery()}>
+                        <button
+                          type="button"
+                          onClick={() => void createSession()}
+                        >
+                          <Icon name="edit" size="small" />
+                          新建会话
+                        </button>
+                      </Show>
+                    </div>
+                  }
+                >
+                  <For each={sessionGroups()}>
+                    {(group) => (
+                      <section class="oc-v2-home-session-group">
+                        <h2>{group.label}</h2>
+                        <div>
+                          <For each={group.sessions}>
+                            {(session) => (
+                              <button
+                                type="button"
+                                class="oc-v2-home-session-row"
+                                classList={{
+                                  "has-open-tab": openTabIds().includes(
+                                    session.id,
+                                  ),
+                                }}
+                                title={session.name}
+                                onClick={() => openSession(session.id)}
+                              >
+                                <span class="oc-v2-session-avatar">
+                                  {workspaceName(workspacePath())
+                                    .slice(0, 1)
+                                    .toUpperCase()}
+                                </span>
+                                <span class="oc-v2-home-session-title">
+                                  {session.name}
+                                </span>
+                                <span class="oc-v2-home-session-project">
+                                  {workspaceName(workspacePath())}
+                                </span>
+                                <time>
+                                  {formatSessionTime(sessionTimestamp(session))}
+                                </time>
+                              </button>
+                            )}
+                          </For>
+                        </div>
+                      </section>
                     )}
                   </For>
-                </dl>
-              </section>
-            </Show>
-
-            <section class="oc-context-section">
-              <h2>快捷操作</h2>
-              <div class="oc-context-actions">
-                <button type="button" onClick={() => void createSession()}>
-                  <Icon name="new-session" size="small" />
-                  新建任务
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAgentMode("plan");
-                    requestAnimationFrame(() => composer?.focus());
-                  }}
-                >
-                  <Icon name="task" size="small" />
-                  切换到 Plan
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAgentMode("build");
-                    requestAnimationFrame(() => composer?.focus());
-                  }}
-                >
-                  <Icon name="code" size="small" />
-                  切换到 Build
-                </button>
+                </Show>
               </div>
             </section>
-
-            <section class="oc-context-section">
-              <h2>快捷键</h2>
-              <dl class="oc-shortcut-list">
-                <div>
-                  <dt>发送消息</dt>
-                  <dd>
-                    <kbd>Enter</kbd>
-                  </dd>
-                </div>
-                <div>
-                  <dt>输入换行</dt>
-                  <dd>
-                    <kbd>Shift</kbd>
-                    <kbd>Enter</kbd>
-                  </dd>
-                </div>
-                <div>
-                  <dt>命令面板</dt>
-                  <dd>
-                    <kbd>Ctrl</kbd>
-                    <kbd>K</kbd>
-                  </dd>
-                </div>
-              </dl>
-            </section>
           </div>
-        </aside>
+        </main>
       </Show>
     </section>
   );

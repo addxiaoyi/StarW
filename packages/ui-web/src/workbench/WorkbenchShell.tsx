@@ -633,6 +633,7 @@ const WorkbenchShell: Component = () => {
       classList={{
         "is-inspector-closed": !inspectorVisible(),
         "is-sidebar-closed": !sidebarOpen(),
+        "is-chat-mode": mode() === "chat",
       }}
     >
       <TitleBar
@@ -774,8 +775,9 @@ const WorkbenchShell: Component = () => {
               <Switch>
                 <Match when={mode() === "chat"}>
                   <ChatRuntimeView
-                    sidebarOpen={sidebarOpen()}
-                    onToggleSidebar={() => setSidebarOpen((value) => !value)}
+                    onSelectMode={(nextMode) => {
+                      void requestModeChange(nextMode);
+                    }}
                   />
                 </Match>
                 <Match when={mode() === "files"}>
