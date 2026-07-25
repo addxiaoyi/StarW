@@ -22,7 +22,7 @@
         "@vitest/coverage-v8": "^2.1.8",
         "cac": "^7.0.0",
         "picocolors": "^1.1.1",
-        "prettier": "^3.5.3",
+        "prettier": "^3.9.6",
         "typescript": "^5.8.2",
         "ulid": "^3.0.2",
         "vitest": "^2.1.8",
@@ -1265,7 +1265,7 @@
 
     "postcss": ["postcss@8.5.18", "https://registry.npmmirror.com/postcss/-/postcss-8.5.18.tgz", { "dependencies": { "nanoid": "^3.3.12", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-xdB1oSLHbz1vRWgCDalrCqEFTWzFlhqFC5tIHLMOSUIjhm3XXQ1qrFy8S/ESr1JYRRXqM3c1QFiMZUJdUTqyMQ=="],
 
-    "prettier": ["prettier@3.9.5", "https://registry.npmmirror.com/prettier/-/prettier-3.9.5.tgz", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-/FVl766LpUfB5vXgCYOYa0MeV/441Ia99AeICQIQFTY/Nw0roZwULcXpku5i1/m5kt/baz+s4Zogspd839HSMg=="],
+    "prettier": ["prettier@3.9.6", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g=="],
 
     "proc-log": ["proc-log@6.1.0", "https://registry.npmmirror.com/proc-log/-/proc-log-6.1.0.tgz", {}, "sha512-iG+GYldRf2BQ0UDUAd6JQ/RwzaQy6mXmsk/IzlYyal4A4SNFw54MeH4/tLkF4I5WoWG9SQwuqWzS99jaFQHBuQ=="],
 
