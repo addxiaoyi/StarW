@@ -1,37 +1,50 @@
 ## Summary
 
-<!-- A clear and concise description of what this PR does -->
+<!-- Explain the problem, the chosen implementation, and why this approach is appropriate. -->
+
+## Affected Areas
+
+- Packages/components:
+- Public API or compatibility impact:
+- Security, privacy, filesystem, process, or network impact:
 
 ## Type of Change
 
 - [ ] Bug fix
-- [ ] New feature
-- [ ] Enhancement
-- [ ] Documentation
+- [ ] Feature
 - [ ] Refactoring
-- [ ] Other (please describe)
+- [ ] Tests
+- [ ] Documentation
+- [ ] Dependency or automation maintenance
+- [ ] Breaking change with migration notes
 
-## Testing
+## Validation
 
-- [ ] Tests added/updated
-- [ ] Manual testing completed
-- [ ] Type check passes
+- [ ] `bun run format:check`
+- [ ] `bun run typecheck`
+- [ ] `bun run test`
+- [ ] `bun run build`
+- [ ] Additional package/platform checks are documented below
 
-## Screenshots / Visual Evidence
+Additional validation:
 
-<!-- Required for UI changes - add screenshots or recordings -->
+<!-- List focused tests, packaging checks, manual scenarios, or explain why a gate is not applicable. -->
 
-## Checklist
+## Visual Evidence
 
-- [ ] Follows the contribution guidelines
-- [ ] CHANGELOG entry added (if applicable)
-- [ ] No breaking changes (or migration documented)
-- [ ] Code is properly formatted
+<!-- Required for visible UI changes. Add screenshots or recordings without personal data or secrets. -->
+
+## Repository Hygiene
+
+- [ ] Tests were added or updated for behavior changes
+- [ ] No credentials, local databases, dependency directories, build outputs, downloaded binaries, or runtime profiles are included
+- [ ] Documentation and migration notes are updated when required
+- [ ] The change is focused and does not contain unrelated cleanup
 
 ## Related Issues
 
-<!-- Link related issues: Fixes #123, Related to #456 -->
+<!-- Example: Fixes #123; Related to #456 -->
 
-## Additional Notes
+## Reviewer Notes
 
-<!-- Any additional notes for reviewers -->
+<!-- Call out risky areas, deliberate tradeoffs, or follow-up work. -->

@@ -1,175 +1,108 @@
 # Contributing to OpenStar
 
-Thank you for contributing to OpenStar! This guide explains how to contribute.
+Contributions should be based on the latest `main` branch and submitted through focused pull requests.
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
-- Bun 1.3.14+
+- Bun 1.3.14 or newer compatible 1.3 release
+- Node.js 24 or newer
 - Git
-- Node.js 18+ (for some dependencies)
+- Platform build tools only when working on native or Electron packaging
 
-### Setup
+## Setup
+
 ```bash
-# Clone the repository
-git clone <your-fork>
-cd openstar
+git clone https://github.com/addxiaoyi/StarW.git
+cd StarW
+bun install --frozen-lockfile
+```
 
-# Initialize
-./scripts/bootstrap.sh
+Start the web application with:
 
-# Run development
+```bash
 bun run dev
 ```
 
-## Development Workflow
+Desktop development instructions are documented in [CONTRIBUTING-DESKTOP.md](./CONTRIBUTING-DESKTOP.md).
 
-### 1. Create a Branch
+## Development workflow
+
+Create a short-lived branch from the latest `main`:
 
 ```bash
-# Create a feature branch
-git checkout -b feat/your-feature
-
-# Or use the workflow
-./openstar workflows:run start-new-task --arg new_branch_name=feat/your-feature
+git fetch origin --prune
+git switch main
+git pull --ff-only origin main
+git switch -c feat/your-change
 ```
 
-### 2. Make Changes
+See [Branch and Change Management](./docs/engineering/BRANCHING.md) for branch naming, update, review, and release rules.
 
-Follow the code style guide in [AGENTS.md](./AGENTS.md).
+## Quality gates
 
-### 3. Test Your Changes
+Run the same core gates used by CI before opening or updating a pull request:
 
 ```bash
-# Type check
+bun run format:check
 bun run typecheck
-
-# Run tests
-bun test
-
-# Lint
-bun run lint
+bun run test
+bun run build
 ```
 
-### 4. Commit
-
-Use conventional commits:
-```
-feat(core): add new adapter
-fix(cli): resolve prompt display issue
-docs: update README
-chore: update dependencies
-```
-
-### 5. Create Pull Request
-
-1. Push your branch
-2. Open a PR using the template
-3. AI will automatically review
-4. Address feedback
-5. Get approval and merge
-
-## Automation
-
-### AI Code Review
-
-All PRs receive automatic AI review. The review checks:
-- TypeScript type correctness
-- Code quality and style
-- Security vulnerabilities
-- Test coverage
-- Documentation
-
-### Issue Triage
-
-New issues are automatically triaged:
-- Type classification (bug/feature/question)
-- Area identification
-- Severity assessment
-- Owner routing
-
-### Feature Flag Cleanup
-
-Old feature flags are automatically cleaned up:
-- Weekly scan for flags enabled > 3 months
-- AI verification of removal safety
-- Automated PR creation
-
-## Packages
-
-### Adding a New Package
-
-1. Create `packages/your-package/`
-2. Add `package.json` with workspace dependencies
-3. Add to root `tsconfig.json` references
-4. Create `src/index.ts` as entry point
-
-### Dependencies
-
-- **Internal**: Use workspace protocol: `"@openstar/other-package": "workspace:*"`
-- **External**: Add to root `package.json` or the specific package
-
-## Testing
-
-### Writing Tests
-
-```typescript
-// src/utils.ts
-export function add(a: number, b: number) {
-  return a + b
-}
-
-// src/utils.test.ts
-import { describe, expect, test } from 'bun:test'
-import { add } from './utils'
-
-describe('add', () => {
-  test('adds two numbers', () => {
-    expect(add(1, 2)).toBe(3)
-  })
-})
-```
-
-### Running Tests
+Useful focused commands include:
 
 ```bash
-bun test                    # All tests
-bun test packages/core      # Specific package
+bun run typecheck:ui
+bun run test:core
+bun run test:swarm
+bun run test:mcp
+bun run test:ui
+bun run test:desktop
+bun run build:cli
+bun run build:desktop
 ```
 
-## Documentation
+Add or update tests for behavior changes. UI changes should include screenshots or recordings in the pull request. Changes to native dependencies, Electron packaging, provider integrations, or release workflows require their additional platform-specific checks.
 
-### Updating Documentation
+## Code and dependency conventions
 
-- Update relevant `.md` files
-- Run `./scripts/changelog.sh` if adding features
-- Update CHANGELOG.md
+- Follow the repository guidance in [AGENTS.md](./AGENTS.md).
+- Use `workspace:*` for internal package dependencies.
+- Add external dependencies to the narrowest appropriate package.
+- Do not commit `node_modules`, build outputs, local databases, credentials, downloaded executables, runtime profiles, or test screenshots.
+- Keep public APIs documented and preserve compatibility unless the pull request explicitly describes a migration.
 
-### Documenting Code
+## Commits
 
-Use JSDoc for public APIs:
+Use Conventional Commit subjects:
 
-```typescript
-/**
- * Adds two numbers together.
- * @param a - First number
- * @param b - Second number
- * @returns The sum of a and b
- */
-export function add(a: number, b: number): number {
-  return a + b
-}
+```text
+feat(core): add a runtime adapter
+fix(cli): correct prompt rendering
+test(swarm): cover dependency release order
+docs: update desktop setup
+chore(deps): update dependencies
 ```
 
-## Release Process
+Keep each commit coherent and avoid combining unrelated cleanup with functional changes.
 
-1. Update version in `package.json`
-2. Run `./scripts/changelog.sh`
-3. Create git tag
-4. GitHub Actions creates the release
+## Pull requests
 
-## Questions?
+Use the pull request template and include:
 
-- Open an issue
-- Check existing issues
-- Read the documentation
+- the problem and implementation summary;
+- affected packages and compatibility impact;
+- tests and validation performed;
+- visual evidence for UI changes;
+- migration notes for breaking changes;
+- linked issues when applicable.
+
+Repository automation and security-sensitive runtime boundaries are reviewed through CODEOWNERS. A pull request is ready to merge only after required checks pass and review comments are resolved.
+
+## Security
+
+Do not report vulnerabilities publicly. Follow [SECURITY.md](./SECURITY.md) and use the repository's private vulnerability reporting flow.
+
+## Releases
+
+Releases are cut from verified `main` commits. Tags matching `v*` trigger validation and creation of a draft GitHub Release. Do not create release tags from local feature branches.

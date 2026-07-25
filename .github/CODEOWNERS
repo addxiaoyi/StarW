@@ -1,0 +1,17 @@
+# Default ownership
+* @addxiaoyi
+
+# Repository automation and release controls
+/.github/ @addxiaoyi
+/scripts/ @addxiaoyi
+/package.json @addxiaoyi
+/bun.lock @addxiaoyi
+
+# Security-sensitive runtime boundaries
+/packages/core/ @addxiaoyi
+/packages/desktop-electron/ @addxiaoyi
+/packages/gateway/ @addxiaoyi
+/packages/mcp/ @addxiaoyi
+/packages/protocol/ @addxiaoyi
+/packages/relay/ @addxiaoyi
+/packages/swarm/ @addxiaoyi
