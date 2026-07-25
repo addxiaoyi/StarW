@@ -655,24 +655,26 @@ const WorkbenchShell: Component = () => {
           onOpenSettings={() => void requestModeChange("settings")}
         />
 
-        <SessionSidebar
-          workspaceName={workspaceName()}
-          workspacePath={workspacePath()}
-          runtimePhase={runtime().phase}
-          showSessions={mode() !== "terminal"}
-          sessions={workbench().sessions}
-          activeSessionId={activeSession().id}
-          onSelectSession={selectSession}
-          onAddSession={addSession}
-        />
-        <Show when={sidebarOpen()}>
-          <div
-            class="sc-panel-resizer is-sidebar"
-            role="separator"
-            aria-label="调整侧栏宽度"
-            aria-orientation="vertical"
-            onPointerDown={(event) => beginPanelResize("sidebar", event)}
+        <Show when={mode() !== "chat"}>
+          <SessionSidebar
+            workspaceName={workspaceName()}
+            workspacePath={workspacePath()}
+            runtimePhase={runtime().phase}
+            showSessions={mode() !== "terminal"}
+            sessions={workbench().sessions}
+            activeSessionId={activeSession().id}
+            onSelectSession={selectSession}
+            onAddSession={addSession}
           />
+          <Show when={sidebarOpen()}>
+            <div
+              class="sc-panel-resizer is-sidebar"
+              role="separator"
+              aria-label="调整侧栏宽度"
+              aria-orientation="vertical"
+              onPointerDown={(event) => beginPanelResize("sidebar", event)}
+            />
+          </Show>
         </Show>
 
         <section class="sc-content">
@@ -771,7 +773,10 @@ const WorkbenchShell: Component = () => {
             <Show when={mode() !== "terminal"}>
               <Switch>
                 <Match when={mode() === "chat"}>
-                  <ChatRuntimeView />
+                  <ChatRuntimeView
+                    sidebarOpen={sidebarOpen()}
+                    onToggleSidebar={() => setSidebarOpen((value) => !value)}
+                  />
                 </Match>
                 <Match when={mode() === "files"}>
                   <FilesRuntimeView
