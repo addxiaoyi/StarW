@@ -1,0 +1,18 @@
+name: "Build Project"
+description: "Build all packages"
+command: |
+  echo "Building OpenStar packages..."
+  echo ""
+
+  echo "📦 UI Web..."
+  bun run build
+  echo ""
+
+  echo "🖥️ CLI..."
+  bun run build:cli
+  echo ""
+
+  echo "✅ Build complete!"
+arguments: []
+author: addxiaoyi2048
+shells: []

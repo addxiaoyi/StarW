@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "@openstar/core": ["./packages/core/src/index.ts"],
+      "@openstar/swarm": ["./packages/swarm/src/index.ts"],
+      "@openstar/acp": ["./packages/acp/src/index.ts"],
+      "@openstar/claw": ["./packages/claw/src/index.ts"],
+      "@openstar/marketplace": ["./packages/marketplace/src/index.ts"],
+      "@openstar/mcp": ["./packages/mcp/src/index.ts"],
+      "@openstar/relay": ["./packages/relay/src/index.ts"],
+      "@openstar/pet": ["./packages/pet/src/index.ts"],
+      "@openstar/desktop-pet": ["./packages/desktop-pet/src/index.ts"],
+      "@openstar/canvas": ["./packages/canvas/src/index.ts"],
+      "@openstar/browser": ["./packages/browser/src/index.ts"],
+      "@openstar/templates": ["./packages/templates/src/index.ts"],
+      "@openstar/protocol": ["./packages/protocol/src/index.ts"]
+    }
+  },
+  "include": ["packages/*/src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

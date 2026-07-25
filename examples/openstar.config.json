@@ -1,0 +1,25 @@
+{
+  "version": "0.1.0",
+  "core": {
+    "workingDirectory": ".",
+    "model": "gpt-4o-mini",
+    "temperature": 0.2,
+    "enableSwarm": true
+  },
+  "providers": {
+    "openai": { "apiKey": null, "defaultModel": "gpt-4o-mini" },
+    "anthropic": { "apiKey": null, "defaultModel": "claude-3-5-sonnet-latest" },
+    "kimi": { "apiKey": null, "defaultModel": "moonshot-v1-8k" }
+  },
+  "mcp": { "servers": [], "autoStart": false },
+  "agents": { "maxConcurrent": 4, "defaultAgentId": "primary" },
+  "swarm": {
+    "maxTaskRetries": 2,
+    "taskTimeoutMs": 600000,
+    "enableParallelExecution": true
+  },
+  "persistence": { "enabled": true },
+  "sandbox": { "mode": "auto", "image": "node:20-alpine", "networkDisabled": false },
+  "plugins": { "directory": "~/.openstar/plugins", "autoLoad": true },
+  "ui": { "theme": "system", "port": 3002 }
+}

@@ -1,0 +1,22 @@
+name: "Push and Create PR"
+description: "Push branch and create pull request"
+command: |
+  branch=$(git branch --show-current)
+  echo "Pushing branch: $branch"
+  echo ""
+
+  git push -u origin "$branch"
+  echo ""
+
+  echo "Creating pull request..."
+  gh pr create \
+    --title "{{pr_title}}" \
+    --body "{{pr_description}}" \
+    --base main
+arguments:
+  - name: pr_title
+    description: Title of the pull request
+  - name: pr_description
+    description: Description of the changes
+author: addxiaoyi2048
+shells: []

@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/* OpenStar Tailwind Configuration */
+@theme {
+  /* Colors - Brand */
+  --color-primary: #22c55e;
+  --color-primary-hover: #4ade80;
+  --color-primary-deep: #16a34a;
+
+  /* Surface */
+  --color-background: #0a0a0a;
+  --color-background-deep: #050505;
+  --color-surface: #111111;
+  --color-surface-2: #161616;
+  --color-border: #1f1f1f;
+  --color-border-hi: #2a2a2a;
+
+  /* Text */
+  --color-foreground: #e8e8e8;
+  --color-foreground-2: #b4b4b4;
+  --color-muted: #8a8a84;
+
+  /* Status */
+  --color-success: #22c55e;
+  --color-warning: #fbbf24;
+  --color-error: #ef4444;
+  --color-info: #60a5fa;
+
+  /* Typography */
+  --font-sans:
+    "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, system-ui,
+    sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", "JetBrains Mono", "SF Mono", Menlo, Consolas,
+    monospace;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+}
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* Code styling */
+code {
+  font-family: var(--font-mono);
+  background-color: var(--color-surface-2);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+}
+
+pre {
+  font-family: var(--font-mono);
+  background-color: var(--color-background-deep);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-hi);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-deep);
+}

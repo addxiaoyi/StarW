@@ -1,0 +1,490 @@
+/**
+ * OpenStar Layout System v2
+ * 基于 clawgod-main + opencode-dev 设计系统
+ * 参考: 参考项目/clawgod-main/web/src/styles/
+ */
+
+/* Design tokens and components are imported once by index.css. */
+
+/* ============================================
+   Layout Shell
+   ============================================ */
+
+.openstar-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* ============================================
+   Top Bar
+   ============================================ */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  background: rgba(10, 10, 10, 0.85);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.topbar.scrolled {
+  border-bottom-color: var(--border);
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  padding: 0 16px;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topbar-center {
+  display: flex;
+  align-items: center;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Brand */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  -webkit-app-region: drag;
+}
+
+.brand-logo {
+  font-size: 20px;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.brand-name {
+  color: var(--text);
+}
+
+.brand-name span {
+  color: var(--green);
+}
+
+/* Tab Bar */
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 100%;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dim);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 100ms;
+}
+
+.tab-item:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.tab-item.active {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.tab-item-icon {
+  font-size: 14px;
+}
+
+/* ============================================
+   Main Content Area
+   ============================================ */
+
+.main-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ============================================
+   Rail (侧边工具栏)
+   ============================================ */
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: var(--rail-width);
+  height: 100%;
+  padding: 8px 6px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.rail-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+}
+
+.rail-section + .rail-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.rail-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--dim);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 100ms;
+}
+
+.rail-button:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.rail-button:active {
+  transform: scale(0.95);
+}
+
+.rail-button.active {
+  color: var(--green);
+  background: var(--green-tint);
+}
+
+.rail-button-icon {
+  font-size: 18px;
+}
+
+.rail-divider {
+  width: 24px;
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* ============================================
+   Workspace Area
+   ============================================ */
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.workspace-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.workspace-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.workspace-content {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+
+/* ============================================
+   Panel System
+   ============================================ */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.panel-title-icon {
+  font-size: 14px;
+  color: var(--green);
+}
+
+.panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+}
+
+.panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   List Items
+   ============================================ */
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 100ms;
+}
+
+.list-item:hover {
+  background: var(--surface-2);
+}
+
+.list-item.active {
+  background: var(--green-tint);
+}
+
+.list-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.list-item.active .list-item-icon {
+  background: var(--green-tint);
+  color: var(--green);
+}
+
+.list-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-item-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-item-desc {
+  font-size: 12px;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-item-action {
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Status Indicators
+   ============================================ */
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.online {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+
+.status-dot.offline {
+  background: var(--dim);
+}
+
+.status-dot.busy {
+  background: var(--amber);
+  animation: pulse 1.5s infinite;
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+
+.footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--footer-height);
+  padding: 0 12px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--dim);
+  flex-shrink: 0;
+}
+
+.footer-left,
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.footer-item a {
+  color: var(--dim);
+  text-decoration: none;
+}
+
+.footer-item a:hover {
+  color: var(--green);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 200ms var(--ease-out);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 768px) {
+  .rail {
+    width: 44px;
+    padding: 6px 4px;
+  }
+
+  .rail-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .topbar-inner {
+    padding: 0 12px;
+  }
+
+  .brand {
+    font-size: 13px;
+  }
+}

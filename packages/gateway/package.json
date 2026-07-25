@@ -1,0 +1,22 @@
+{
+  "name": "@openstar/gateway",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "description": "OpenStar Gateway — ACP JSON-RPC + REST + WebSocket server for the web UI",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "start": "bun run src/index.ts",
+    "typecheck": "bun x tsc --noEmit"
+  },
+  "dependencies": {
+    "@openstar/core": "workspace:*",
+    "@openstar/swarm": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.13",
+    "@types/node": "^24.12.2",
+    "typescript": "^5.8.2"
+  }
+}

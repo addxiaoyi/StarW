@@ -1,0 +1,112 @@
+# Dependencies
+node_modules/
+**/node_modules/
+.pnp/
+.pnp.js
+
+# Build and packaging outputs
+dist/
+**/dist/
+dist-*/
+**/dist-*/
+build/
+**/build/
+out/
+**/out/
+release-assets/
+**/release-assets/
+*.js.map
+*.tsbuildinfo
+
+# Logs, runtime traces, and local app data
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.playwright-mcp/
+**/.playwright-cli/
+output/
+**/output/
+OpenStar-Data/
+**/OpenStar-Data/
+%SystemDrive%/
+**/%SystemDrive%/
+
+# Test coverage and temporary files
+coverage/
+**/coverage/
+.nyc_output/
+.tmp/
+**/.tmp/
+*.tmp
+*.temp
+playwright-report/
+**/playwright-report/
+test-results/
+**/test-results/
+
+# Local databases, credentials, and packaged binaries
+*.db
+*.sqlite
+*.sqlite3
+*.pem
+*.key
+*.p12
+*.pfx
+*.zip
+*.exe
+*.dll
+*.asar
+*.node
+*.bin
+*.b64
+*.z64
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+/nul
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Package-manager files not used by this repository
+package-lock.json
+yarn.lock
+
+# Local AI and indexing metadata
+.agents/
+.claude/
+.codegraph/
+
+# Accidental nested copy
+packages/cli/packages/
+
+# Root-level validation artifacts and screenshots
+/*.png
+/.final-validation.json
+/.tmp-*
+/cli-*.txt
+/test-result*.txt
+/tr-proto*.txt
+/tsc-out.txt
+/vcfg.txt
+/vitest-core.txt
+/$null
+/process.exit(2)
+/\{const
+/\{console.log*
+
+# Downloaded local tooling
+/tools/
+
+# Reference projects are not part of OpenStar
+鍙傝€冮」鐩?
+warp-master/
+opencode-dev/

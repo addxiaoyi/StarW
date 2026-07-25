@@ -1,0 +1,19 @@
+name: "Run Tests"
+description: "Run tests for the project"
+command: |
+  echo "Running OpenStar tests..."
+  echo ""
+
+  echo "📦 Type check:"
+  bun run typecheck && echo "✅ Type check passed" || echo "❌ Type check failed"
+  echo ""
+
+  echo "🧪 Unit tests:"
+  bun test && echo "✅ Tests passed" || echo "❌ Tests failed"
+  echo ""
+
+  echo "🔍 Lint:"
+  bun run lint && echo "✅ Lint passed" || echo "❌ Lint failed"
+arguments: []
+author: addxiaoyi2048
+shells: []

@@ -1,0 +1,165 @@
+name: Desktop Application Build
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - "v*"
+    paths:
+      - "packages/desktop-electron/**"
+      - "packages/ui-web/**"
+      - "packages/core/**"
+      - "package.json"
+      - "bun.lock"
+      - ".github/workflows/desktop-build.yml"
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Build platform
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - windows
+          - mac
+          - linux
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "24"
+  BUN_VERSION: "1.3.14"
+
+jobs:
+  build-windows:
+    name: Build Windows Portable
+    runs-on: windows-latest
+    timeout-minutes: 30
+    if: github.event_name == 'push' || inputs.platform == 'all' || inputs.platform == 'windows'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Test Electron boundary
+        run: bun run --cwd packages/desktop-electron test
+
+      - name: Build Windows portable executable
+        run: bun run --cwd packages/desktop-electron build:win
+
+      - name: Verify Windows portable package contents
+        run: node packages/desktop-electron/scripts/verify-artifacts.cjs windows
+
+      - name: Smoke-test packaged Windows runtime RPC
+        run: bun run --cwd packages/desktop-electron smoke:runtime:win
+
+      - name: Smoke-test Windows portable executable
+        run: bun run --cwd packages/desktop-electron smoke:portable:win
+
+      - name: Upload Windows portable executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: openstar-windows-portable
+          path: packages/desktop-electron/dist/*-portable-win-*.exe
+          if-no-files-found: error
+          retention-days: 7
+
+  build-mac:
+    name: Build macOS
+    runs-on: macos-latest
+    timeout-minutes: 30
+    if: github.event_name == 'push' || inputs.platform == 'all' || inputs.platform == 'mac'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Test Electron boundary
+        run: bun run --cwd packages/desktop-electron test
+
+      - name: Build Electron app
+        run: bun run --cwd packages/desktop-electron build:mac
+
+      - name: Verify macOS package contents
+        run: node packages/desktop-electron/scripts/verify-artifacts.cjs mac
+
+      - name: Upload macOS app
+        uses: actions/upload-artifact@v4
+        with:
+          name: openstar-macos-app
+          path: |
+            packages/desktop-electron/dist/mac*
+            packages/desktop-electron/dist/*.dmg
+          if-no-files-found: error
+          retention-days: 7
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'push' || inputs.platform == 'all' || inputs.platform == 'linux'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Test Electron boundary
+        run: bun run --cwd packages/desktop-electron test
+
+      - name: Build Electron app
+        run: bun run --cwd packages/desktop-electron build:linux
+
+      - name: Verify Linux package contents
+        run: node packages/desktop-electron/scripts/verify-artifacts.cjs linux
+
+      - name: Upload Linux AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: openstar-linux-appimage
+          path: |
+            packages/desktop-electron/dist/linux-unpacked
+            packages/desktop-electron/dist/*.AppImage
+          if-no-files-found: error
+          retention-days: 7

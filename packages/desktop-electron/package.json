@@ -1,0 +1,45 @@
+{
+  "name": "@openstar/desktop-electron",
+  "version": "0.1.0",
+  "description": "OpenStar Desktop - Warp-style Terminal Application",
+  "main": "src/main.cjs",
+  "author": "addxiaoyi2048",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron .",
+    "dev:win": "electron .",
+    "dev:mac": "ELECTRON_OSX_SIGN=true electron .",
+    "dev:linux": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "test:ts": "vitest run --config vitest.config.mts",
+    "build:renderer": "bun run --cwd ../ui-web build",
+    "build:engine": "bun build src/engine.ts --outfile build/engine/openstar-engine.mjs --target node --format esm",
+    "verify:package": "node scripts/verify-package.cjs",
+    "smoke:engine": "node scripts/smoke-engine.cjs",
+    "smoke:pty:electron": "node scripts/smoke-electron-pty.cjs",
+    "prepare:package": "bun run test && bun run test:ts && bun run build:renderer && bun run build:engine && bun run verify:package && bun run smoke:engine && bun run smoke:pty:electron",
+    "build": "bun run prepare:package && bun run clean:all && node scripts/run-builder.cjs",
+    "build:win": "bun run prepare:package && bun run clean:win && node scripts/run-builder.cjs --win",
+    "build:mac": "bun run prepare:package && bun run clean:mac && node scripts/run-builder.cjs --mac",
+    "build:linux": "bun run prepare:package && bun run clean:linux && node scripts/run-builder.cjs --linux",
+    "build:all": "bun run prepare:package && bun run clean:all && node scripts/run-builder.cjs --win --mac --linux",
+    "pack": "bun run prepare:package && bun run clean:all && node scripts/run-builder.cjs --dir",
+    "postinstall": "electron-builder install-app-deps",
+    "builder": "node scripts/run-builder.cjs",
+    "clean:win": "node scripts/clean-output.cjs windows",
+    "smoke:portable:win": "node scripts/smoke-portable.cjs",
+    "clean:all": "node scripts/clean-output.cjs all",
+    "clean:mac": "node scripts/clean-output.cjs mac",
+    "clean:linux": "node scripts/clean-output.cjs linux",
+    "smoke:runtime:win": "node scripts/smoke-packaged-runtime.cjs"
+  },
+  "dependencies": {
+    "electron-log": "^5.3.4",
+    "electron-store": "^10.0.1",
+    "node-pty": "^1.1.0"
+  },
+  "devDependencies": {
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3"
+  }
+}

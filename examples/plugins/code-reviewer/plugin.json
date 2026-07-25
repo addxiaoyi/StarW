@@ -1,0 +1,13 @@
+{
+  "name": "code-reviewer",
+  "version": "1.0.0",
+  "description": "Automated code review with double-check pattern",
+  "author": "OpenStar Team",
+  "license": "MIT",
+  "openstar": {
+    "minVersion": "0.1.0",
+    "capabilities": ["dag-pattern", "skill"],
+    "permissions": ["filesystem:read", "git", "shell"]
+  },
+  "dependencies": {}
+}

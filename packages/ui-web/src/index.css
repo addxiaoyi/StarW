@@ -1,0 +1,1616 @@
+/* OpenStar Desktop UI — 完整样式表 v2
+ * 基于 clawgod-main 设计系统 + opencode-dev 组件模式
+ */
+
+/* Tailwind CSS 入口必须放在最前面 */
+@import "./styles/tailwind.css";
+
+/* 组件样式由本文件维护，布局扩展保持单一后置入口。 */
+@import "./styles/layout.css";
+
+/* CSS Variables - 基于 clawgod-main */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  /* Surface */
+  --bg: #0a0a0a;
+  --bg-2: #111111;
+  --bg-3: #161616;
+  --bg-4: #1f1f1f;
+  --border: #1f1f1f;
+  --border-hi: #2a2a2a;
+
+  /* Text */
+  --text: #e8e8e8;
+  --text-2: #b4b4b4;
+  --text-3: #909090;
+
+  /* Brand */
+  --accent: #22c55e;
+  --accent-2: #4ade80;
+  --accent-deep: #16a34a;
+
+  /* Categorical */
+  --green: #22c55e;
+  --yellow: #fbbf24;
+  --red: #ef4444;
+  --blue: #60a5fa;
+  --orange: #fb923c;
+
+  /* Font */
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f7f7f5;
+  --bg-2: #ffffff;
+  --bg-3: #f0f0ec;
+  --bg-4: #e5e5df;
+  --border: #d8d8d2;
+  --border-hi: #bdbdb5;
+  --text: #1a1a18;
+  --text-2: #4f4f49;
+  --text-3: #686861;
+  --surface: #ffffff;
+  --surface-2: #f0f0ec;
+  --dim: #686861;
+  --color-background: #f7f7f5;
+  --color-background-deep: #ecece7;
+  --color-surface: #ffffff;
+  --color-surface-2: #f0f0ec;
+  --color-card: #ffffff;
+  --color-border: #d8d8d2;
+  --color-border-hi: #bdbdb5;
+  --color-foreground: #1a1a18;
+  --color-foreground-2: #4f4f49;
+  --color-muted: #686861;
+  --color-muted-foreground: #5b5b55;
+  --color-ring: #16a34a;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ─── App shell ─────────────────────────────────────────────── */
+.sc-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.sc-app.is-inspector-closed .sc-inspector {
+  display: none;
+}
+
+/* ─── Titlebar ──────────────────────────────────────────────── */
+.sc-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+.sc-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 13px;
+}
+.sc-brand-mark {
+  font-size: 18px;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.sc-title-context {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 16px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.sc-title-context strong {
+  color: var(--text);
+}
+.sc-title-actions {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  -webkit-app-region: no-drag;
+}
+
+/* ─── Workbench ─────────────────────────────────────────────── */
+.sc-workbench {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ─── Rail (left icon bar) ──────────────────────────────────── */
+.sc-rail {
+  width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  gap: 2px;
+  background: var(--bg-2);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sc-rail-top {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  align-items: center;
+}
+.sc-rail-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.sc-rail-button:hover {
+  background: var(--bg-4);
+  color: var(--text);
+}
+.sc-rail-button.is-active {
+  background: var(--green-tint);
+  color: var(--green);
+}
+
+/* ─── Sidebar ───────────────────────────────────────────────── */
+.sc-sidebar {
+  width: var(--sc-sidebar-width, 220px);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+.sc-sidebar-section {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.sc-sidebar-section.is-flex {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.sc-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.sc-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+
+.sc-workspace-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--bg-3);
+  border-radius: 8px;
+  margin-top: 6px;
+}
+.sc-workspace-mark {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--green), var(--blue));
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #000;
+  flex-shrink: 0;
+}
+.sc-workspace-row strong {
+  display: block;
+  font-size: 13px;
+}
+.sc-workspace-row small {
+  display: block;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.sc-session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  flex: 1;
+  margin-top: 4px;
+}
+.sc-session-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.12s;
+}
+.sc-session-row:hover {
+  background: var(--bg-3);
+}
+.sc-session-row.is-active {
+  background: var(--bg-4);
+}
+
+.sc-health-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sc-health-dot.is-ready {
+  background: var(--green);
+}
+.sc-health-dot.is-busy {
+  background: var(--yellow);
+  animation: pulse 1s infinite;
+}
+.sc-health-dot.is-error {
+  background: var(--red);
+}
+.sc-health-dot.is-idle {
+  background: var(--text-3);
+}
+@keyframes sc-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.sc-session-copy {
+  flex: 1;
+  min-width: 0;
+}
+.sc-session-copy strong {
+  display: block;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sc-session-copy small {
+  display: block;
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sc-session-arrow {
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.sc-reference-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sc-reference-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.sc-reference-row small {
+  margin-left: auto;
+  color: var(--text-3);
+}
+
+/* ─── Content (main area) ───────────────────────────────────── */
+.sc-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ─── Tabs ──────────────────────────────────────────────────── */
+.sc-tab-strip {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 8px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.sc-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 12px;
+  transition:
+    background 0.12s,
+    color 0.12s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.sc-tab:hover {
+  background: var(--bg-3);
+  color: var(--text);
+}
+.sc-tab.is-active {
+  background: var(--bg-4);
+  color: var(--text);
+}
+.sc-tab-main {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.sc-tab-state {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.sc-tab-state.is-ready {
+  background: var(--green);
+}
+.sc-tab-state.is-busy {
+  background: var(--yellow);
+}
+.sc-tab-state.is-error {
+  background: var(--red);
+}
+.sc-tab-state.is-idle {
+  background: var(--text-3);
+}
+.sc-tab-close {
+  margin-left: 2px;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+}
+.sc-tab-close:hover {
+  background: var(--bg-4);
+  color: var(--text);
+}
+.sc-add-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.sc-add-tab:hover {
+  background: var(--bg-3);
+  color: var(--text);
+}
+
+/* ─── Stage (content area) ──────────────────────────────────── */
+.sc-stage {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sc-terminal-stack {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.sc-terminal-stack.is-hidden {
+  display: none;
+}
+
+/* ─── Terminal pane ─────────────────────────────────────────── */
+.sc-terminal-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.sc-terminal-pane.is-hidden {
+  display: none;
+}
+.sc-pty-shell {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg-deep, var(--bg));
+}
+.sc-pty-host {
+  position: absolute;
+  inset: 0;
+  padding: 8px 10px;
+}
+.sc-pty-host .xterm {
+  height: 100%;
+}
+.sc-pty-host .xterm-viewport {
+  overflow-y: auto !important;
+}
+.sc-pty-state {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-3);
+}
+.sc-pty-state.is-ready {
+  color: var(--green);
+}
+.sc-pty-state.is-error {
+  color: var(--red);
+}
+.sc-pty-state.is-starting {
+  color: var(--yellow);
+}
+.sc-pty-error {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  max-width: min(560px, calc(100% - 24px));
+  padding: 8px 10px;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 6px;
+  background: rgba(32, 13, 13, 0.94);
+  color: #fca5a5;
+  font-size: 12px;
+  pointer-events: none;
+}
+.sc-terminal-notices {
+  max-height: 38%;
+  overflow: auto;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-2);
+}
+.sc-terminal-notices > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 12px;
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 12px;
+}
+.sc-terminal-notices > summary .sc-icon-button {
+  margin-left: auto;
+}
+.sc-terminal-notice-list {
+  padding: 8px 12px;
+}
+.sc-pane-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.sc-path {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-2);
+}
+.sc-path-separator {
+  color: var(--text-3);
+}
+.sc-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+}
+
+.sc-block-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+/* ─── Command blocks ────────────────────────────────────────── */
+.sc-command-block {
+  margin-bottom: 12px;
+  border-radius: 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.sc-command-block.is-success {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+.sc-command-block.is-error {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.sc-command-block.is-running {
+  border-color: rgba(251, 191, 36, 0.3);
+}
+.sc-command-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-3);
+  border-bottom: 1px solid var(--border);
+}
+.sc-command-prompt {
+  color: var(--green);
+  font-weight: 700;
+}
+.sc-command-head code {
+  font-family: "Cascadia Code", "Fira Code", monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+.sc-command-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.sc-command-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.sc-command-output {
+  font-family: "Cascadia Code", "Fira Code", monospace;
+  font-size: 12px;
+  color: var(--text-2);
+  padding: 10px 12px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+.sc-command-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px;
+  background: var(--bg-3);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+/* ─── Command composer ──────────────────────────────────────── */
+.sc-command-composer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-2);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sc-composer-prompt {
+  color: var(--green);
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.sc-command-composer input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: "Cascadia Code", "Fira Code", monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+.sc-command-composer input::placeholder {
+  color: var(--text-3);
+}
+.sc-run-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: var(--green);
+  color: #000;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.sc-run-button:disabled {
+  background: var(--bg-4);
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+.sc-run-button:not(:disabled):hover {
+  background: var(--accent-2);
+}
+
+/* ─── Empty pane ────────────────────────────────────────────── */
+.sc-empty-pane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px;
+  color: var(--text-3);
+  text-align: center;
+}
+.sc-empty-pane strong {
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+/* ─── Inspector ─────────────────────────────────────────────── */
+.sc-inspector {
+  width: var(--sc-inspector-width, 280px);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-2);
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+}
+.sc-inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.sc-inspector-head strong {
+  display: block;
+  font-size: 13px;
+}
+.sc-runtime-chip {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.sc-runtime-chip.is-ready {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--green);
+}
+.sc-runtime-chip.is-loading {
+  background: rgba(96, 165, 250, 0.15);
+  color: var(--blue);
+}
+.sc-runtime-chip.is-preview {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--yellow);
+}
+.sc-runtime-chip.is-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--red);
+}
+
+.sc-segmented {
+  display: flex;
+  gap: 2px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.sc-segmented button {
+  flex: 1;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 12px;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.sc-segmented button:hover {
+  background: var(--bg-3);
+  color: var(--text);
+}
+.sc-segmented button.is-active {
+  background: var(--green);
+  color: #000;
+}
+
+.sc-inspector-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+}
+.sc-inspector-summary {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.sc-runtime-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background 0.12s;
+  margin-bottom: 2px;
+}
+.sc-runtime-row:hover {
+  background: var(--bg-3);
+}
+.sc-runtime-row.is-button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  color: inherit;
+}
+.sc-runtime-copy {
+  flex: 1;
+  min-width: 0;
+}
+.sc-runtime-copy strong {
+  display: block;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sc-runtime-copy small {
+  display: block;
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sc-row-status {
+  font-size: 12px;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.sc-agent-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sc-agent-mark.is-running {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--green);
+}
+.sc-agent-mark.is-idle {
+  background: var(--bg-4);
+  color: var(--text-2);
+}
+.sc-agent-mark.is-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--red);
+}
+.sc-agent-mark.is-skill {
+  background: rgba(96, 165, 250, 0.15);
+  color: var(--blue);
+}
+.sc-agent-mark.is-mcp {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--green);
+}
+
+.sc-runtime-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-2);
+  font-size: 12px;
+}
+.sc-runtime-error strong {
+  color: var(--text);
+}
+
+/* ─── Loading ───────────────────────────────────────────────── */
+.sc-loading-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px;
+}
+.sc-loading-view span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: dot-bounce 1.2s infinite;
+}
+.sc-loading-view span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.sc-loading-view span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes sc-dot-bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ─── Command palette ───────────────────────────────────────── */
+.sc-palette-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 80px;
+}
+.sc-palette {
+  width: 480px;
+  max-height: 400px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(34, 197, 94, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.sc-palette-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sc-palette-search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: var(--text);
+}
+.sc-palette-search input::placeholder {
+  color: var(--text-3);
+}
+.sc-palette-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+}
+.sc-palette-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  color: inherit;
+  transition: background 0.1s;
+}
+.sc-palette-row:hover {
+  background: var(--bg-4);
+}
+.sc-palette-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-3);
+  border-radius: 8px;
+  color: var(--green);
+  flex-shrink: 0;
+}
+.sc-palette-row strong {
+  display: block;
+  font-size: 13px;
+}
+.sc-palette-row small {
+  display: block;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.sc-palette-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+/* ─── Status bar ────────────────────────────────────────────── */
+.sc-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 24px;
+  padding: 0 12px;
+  background: var(--bg-2);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+.sc-status-spacer {
+  flex: 1;
+}
+
+/* ─── Icon buttons ──────────────────────────────────────────── */
+.sc-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.sc-icon-button:hover {
+  background: var(--bg-4);
+  color: var(--text);
+}
+.sc-text-button {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.12s;
+}
+.sc-text-button:hover {
+  background: var(--bg-3);
+  color: var(--text);
+}
+
+/* ─── Scrollbars ────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-4);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hi);
+}
+
+/* ─── Animations ────────────────────────────────────────────── */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 150ms ease-out;
+}
+.animate-slide-up {
+  animation: slide-up 200ms ease-out;
+}
+.animate-scale-in {
+  animation: scale-in 150ms ease-out;
+}
+
+/* ─── Workbench resilience and accessibility ───────────────── */
+.sc-app.is-sidebar-closed .sc-sidebar {
+  display: none;
+}
+
+.sc-titlebar {
+  min-width: 0;
+  padding-right: max(12px, 140px);
+}
+
+.sc-title-context,
+.sc-title-context > span,
+.sc-title-context > strong,
+.sc-path,
+.sc-path > span,
+.sc-status-truncate {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-title-context {
+  flex: 1;
+}
+
+.sc-content,
+.sc-stage,
+.runtime-main,
+.runtime-sidebar,
+.files-runtime-main,
+.files-runtime-sidebar,
+.agents-runtime-main,
+.agents-runtime-sidebar,
+.skills-runtime-main,
+.skills-runtime-sidebar,
+.mcp-runtime-main,
+.mcp-runtime-sidebar {
+  min-width: 0;
+}
+
+.sc-panel-resizer {
+  position: relative;
+  z-index: 8;
+  width: 7px;
+  margin-inline: -3px;
+  flex: 0 0 7px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.sc-panel-resizer::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 3px;
+  width: 1px;
+  background: transparent;
+  transition: background 120ms ease;
+}
+
+.sc-panel-resizer:hover::after,
+.sc-panel-resizer:active::after {
+  background: var(--green);
+}
+
+body.is-resizing-panels {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.sc-tab,
+.sc-session-row,
+.sc-runtime-row,
+.sc-palette-row,
+button,
+input,
+textarea,
+select,
+[role="tab"],
+[role="option"],
+[role="separator"] {
+  outline: none;
+}
+
+.sc-tab:focus-visible,
+.sc-session-row:focus-visible,
+.sc-runtime-row:focus-visible,
+.sc-palette-row:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="tab"]:focus-visible,
+[role="option"]:focus-visible,
+[role="separator"]:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.sc-icon-button,
+.sc-add-tab,
+.sc-tab-close,
+.sc-rail-button {
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.sc-tab-close {
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-runtime-copy small,
+.sc-session-copy small,
+.sc-reference-row,
+.sc-command-meta,
+.sc-command-status,
+.sc-inspector-summary,
+.sc-statusbar,
+.text-muted-foreground {
+  color: var(--text-2);
+}
+
+.sc-runtime-row,
+.sc-session-row,
+.sc-reference-row,
+.sc-statusbar,
+.sc-command-meta,
+.sc-command-status {
+  font-size: max(12px, 0.75rem);
+}
+
+.runtime-card,
+.runtime-card code,
+.runtime-card pre,
+.runtime-card small,
+.runtime-long-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 1100px) {
+  .sc-inspector,
+  .sc-panel-resizer.is-inspector {
+    display: none;
+  }
+
+  .sc-sidebar {
+    width: min(var(--sc-sidebar-width, 220px), 200px);
+  }
+
+  .sc-titlebar {
+    padding-right: max(12px, 132px);
+  }
+}
+
+@media (max-width: 900px) {
+  .sc-sidebar,
+  .sc-panel-resizer.is-sidebar {
+    display: none;
+  }
+
+  .sc-content {
+    min-width: 420px;
+  }
+
+  .runtime-split,
+  .files-runtime,
+  .agents-runtime,
+  .skills-runtime,
+  .mcp-runtime {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .runtime-sidebar,
+  .files-runtime-sidebar,
+  .agents-runtime-sidebar,
+  .skills-runtime-sidebar,
+  .mcp-runtime-sidebar {
+    max-height: min(38vh, 320px);
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .files-runtime-main,
+  .agents-runtime-main,
+  .skills-runtime-main,
+  .mcp-runtime-main,
+  .runtime-main {
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 700px) {
+  .sc-titlebar {
+    padding-inline: 8px 124px;
+  }
+
+  .sc-brand strong,
+  .sc-title-context > span,
+  .sc-title-context > svg {
+    display: none;
+  }
+
+  .sc-title-context {
+    margin-left: 4px;
+  }
+
+  .sc-rail {
+    width: 42px;
+  }
+
+  .sc-rail-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .sc-content {
+    min-width: 0;
+  }
+
+  .sc-pane-toolbar,
+  .sc-toolbar-actions,
+  .sc-statusbar,
+  .files-runtime-toolbar,
+  .runtime-toolbar {
+    flex-wrap: wrap;
+    height: auto;
+  }
+
+  .sc-palette-backdrop {
+    padding: 12px;
+    align-items: flex-start;
+  }
+
+  .sc-palette {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .sc-health-dot,
+  .sc-tab-state,
+  .sc-agent-mark,
+  .sc-runtime-chip {
+    border: 1px solid ButtonText;
+    forced-color-adjust: none;
+  }
+
+  .sc-tab.is-active,
+  .sc-session-row.is-active,
+  .sc-segmented button.is-active,
+  .sc-rail-button.is-active {
+    outline: 2px solid Highlight;
+    color: HighlightText;
+    background: Highlight;
+  }
+
+  button,
+  input,
+  textarea,
+  select,
+  [role="separator"] {
+    border: 1px solid ButtonText;
+  }
+}
+
+/* Responsive workbench and adjustable panels */
+.sc-app.is-sidebar-closed .sc-sidebar,
+.sc-app.is-sidebar-closed .sc-panel-resizer.is-sidebar,
+.sc-app.is-inspector-closed .sc-panel-resizer.is-inspector {
+  display: none;
+}
+
+.sc-sidebar {
+  width: var(--sc-sidebar-width, 220px);
+  min-width: 180px;
+  max-width: 360px;
+}
+
+.sc-inspector {
+  width: var(--sc-inspector-width, 280px);
+  min-width: 180px;
+  max-width: 440px;
+}
+
+.sc-panel-resizer {
+  position: relative;
+  z-index: 12;
+  width: 5px;
+  margin: 0 -2px;
+  flex: 0 0 5px;
+  cursor: col-resize;
+  touch-action: none;
+  background: transparent;
+}
+
+.sc-panel-resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0 2px;
+  background: transparent;
+  transition: background 120ms ease;
+}
+
+.sc-panel-resizer:hover::after,
+body.is-resizing-panels .sc-panel-resizer::after {
+  background: var(--green);
+}
+
+body.is-resizing-panels {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.sc-title-context {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sc-title-context > span,
+.sc-title-context > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-title-actions {
+  padding-right: max(
+    0px,
+    calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw))
+  );
+}
+
+.runtime-main,
+.runtime-sidebar,
+.sc-content,
+.sc-stage {
+  min-width: 0;
+}
+
+.runtime-main code,
+.runtime-main pre,
+.sc-runtime-copy,
+.sc-path,
+.sc-command-output {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .sc-workbench {
+    position: relative;
+  }
+
+  .sc-inspector {
+    position: absolute;
+    z-index: 40;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(var(--sc-inspector-width, 280px), calc(100vw - 96px));
+    max-width: calc(100vw - 96px);
+    box-shadow: -16px 0 40px rgba(0, 0, 0, 0.32);
+  }
+
+  .sc-panel-resizer.is-inspector {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .sc-rail {
+    width: 44px;
+  }
+
+  .sc-sidebar {
+    position: absolute;
+    z-index: 45;
+    top: 0;
+    bottom: 0;
+    left: 44px;
+    width: min(var(--sc-sidebar-width, 220px), calc(100vw - 88px));
+    max-width: calc(100vw - 88px);
+    box-shadow: 16px 0 40px rgba(0, 0, 0, 0.32);
+  }
+
+  .sc-panel-resizer.is-sidebar {
+    display: none;
+  }
+
+  .sc-content {
+    min-width: 360px;
+  }
+
+  .sc-titlebar {
+    gap: 4px;
+    padding-left: 8px;
+  }
+
+  .sc-title-context {
+    margin-left: 4px;
+  }
+
+  .sc-brand strong {
+    display: none;
+  }
+
+  .runtime-split {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(128px, 36%) minmax(0, 1fr);
+  }
+
+  .runtime-sidebar {
+    min-height: 0;
+    max-height: none;
+    overflow: auto;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .runtime-main {
+    min-height: 0;
+    overflow: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .sc-statusbar {
+    gap: 6px;
+    padding-inline: 8px;
+  }
+
+  .sc-statusbar .is-optional {
+    display: none;
+  }
+
+  .sc-palette-backdrop {
+    padding: 48px 12px 12px;
+  }
+
+  .sc-palette {
+    width: min(480px, 100%);
+    max-height: calc(100vh - 60px);
+  }
+
+  .runtime-split {
+    grid-template-rows: minmax(112px, 32%) minmax(0, 1fr);
+  }
+}
+
+/* Accessible target sizes for primary workbench controls */
+.oc-button,
+.sc-text-button,
+.sc-segmented button,
+.sc-palette-row,
+.sc-session-row {
+  min-height: 32px;
+}

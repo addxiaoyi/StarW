@@ -1,0 +1,18 @@
+# Force LF line endings for consistency
+* text=auto eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+
+# Scripts
+*.sh text eol=lf
+
+# Markdown
+*.md text
+*.mdx text

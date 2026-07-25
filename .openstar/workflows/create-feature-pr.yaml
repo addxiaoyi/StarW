@@ -1,0 +1,40 @@
+name: "Create Feature PR"
+description: "Create a pull request for a feature branch"
+command: |
+  gh pr create \
+    --title "{{pr_title}}" \
+    --body "## Summary
+
+{{pr_description}}
+
+## Type
+
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Enhancement
+- [ ] Documentation
+
+## Testing
+
+- [ ] Tests added/updated
+- [ ] Manual testing completed
+- [ ] Type check passes
+
+## Checklist
+
+- [ ] Follows contribution guidelines
+- [ ] CHANGELOG entry added (if applicable)
+- [ ] No breaking changes (or migration documented)
+
+## Screenshots (for UI changes)
+
+" \
+    --base main \
+    --label "type:feature"
+arguments:
+  - name: pr_title
+    description: Title of the pull request
+  - name: pr_description
+    description: Brief description of the changes
+author: addxiaoyi2048
+shells: []

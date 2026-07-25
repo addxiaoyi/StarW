@@ -1,0 +1,26 @@
+{
+  "dagPatterns": [
+    {
+      "id": "code-review-double-check",
+      "name": "Code Review (Double Check)",
+      "description": "Two independent reviewers produce consensus, escalate on disagreement",
+      "category": "review",
+      "definition": {
+        "pattern": "double-check",
+        "inputs": {
+          "Reviewer-1": { "focus": "security" },
+          "Reviewer-2": { "focus": "performance" }
+        }
+      }
+    }
+  ],
+  "skills": [
+    {
+      "id": "code-review",
+      "name": "Code Review",
+      "description": "Review code changes for quality and security",
+      "tags": ["review", "code", "quality"],
+      "execute": "./handlers/review.js"
+    }
+  ]
+}

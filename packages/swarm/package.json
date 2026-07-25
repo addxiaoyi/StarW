@@ -1,0 +1,13 @@
+{
+  "name": "@openstar/swarm",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@openstar/core": "workspace:*",
+    "@openstar/relay": "workspace:*",
+    "effect": "^4.0.0-beta.83",
+    "zod": "^4.1.8"
+  }
+}

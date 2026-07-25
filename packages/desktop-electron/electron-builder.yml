@@ -1,0 +1,77 @@
+appId: com.openstar.desktop
+productName: OpenStar
+copyright: Copyright © 2026 addxiaoyi2048
+asar: true
+asarUnpack:
+  - node_modules/node-pty/**/*
+
+directories:
+  output: dist
+  buildResources: assets
+
+files:
+  - src/**/*
+  - "!src/**/*.map"
+  - assets/**/*
+
+extraResources:
+  - from: ../ui-web/dist
+    to: ui-web
+    filter:
+      - "**/*"
+  - from: build/engine
+    to: engine
+    filter:
+      - "**/*"
+
+extraMetadata:
+  main: src/main.cjs
+
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  icon: assets/icon.ico
+
+portable:
+  artifactName: ${productName}-${version}-portable-win-${arch}.${ext}
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+  icon: assets/icon.png
+  category: public.app-category.developer-tools
+  artifactName: ${productName}-${version}-mac-${arch}.${ext}
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: assets/entitlements.mac.plist
+  entitlementsInherit: assets/entitlements.mac.plist
+
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+  window:
+    width: 540
+    height: 380
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  icon: assets/icon.png
+  category: Development
+  artifactName: ${productName}-${version}-linux-${arch}.${ext}

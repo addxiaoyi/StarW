@@ -1,0 +1,15 @@
+name: "Commit Changes"
+description: "Commit all changes with a message"
+command: |
+  git add -A
+  git status
+  echo ""
+  echo "Committing with message:"
+  echo "{{commit_message}}"
+  echo ""
+  git commit -m "{{commit_message}}"
+arguments:
+  - name: commit_message
+    description: Commit message (supports multiline)
+author: addxiaoyi2048
+shells: []

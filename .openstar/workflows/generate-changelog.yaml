@@ -1,0 +1,34 @@
+name: "Generate Changelog"
+description: "Generate changelog for release"
+command: |
+  channel={{channel}}
+  release_tag="{{release_tag}}"
+
+  echo "Generating changelog for $channel channel..."
+  echo "Release tag: $release_tag"
+  echo ""
+
+  # Get previous tag
+  PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+  echo "Previous release: $PREV_TAG"
+  echo ""
+
+  # Get merged PRs
+  if [ -n "$PREV_TAG" ]; then
+    echo "📝 Changes since $PREV_TAG:"
+    git log --oneline "$PREV_TAG"..HEAD
+  else
+    echo "📝 All commits:"
+    git log --oneline -20
+  fi
+  echo ""
+
+  # Generate changelog draft
+  bun run scripts/changelog --channel "$channel" --release-tag "$release_tag" --from "$PREV_TAG"
+arguments:
+  - name: channel
+    description: Release channel (stable, preview, dev)
+  - name: release_tag
+    description: Release tag (e.g., v0.1.0.stable_00)
+author: addxiaoyi2048
+shells: []
