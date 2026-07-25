@@ -78,7 +78,7 @@ test("creates a persistent PTY and forwards input, output and resize", () => {
   });
   assert.equal(started.pid, 4242);
   assert.equal(spawnCall.executable, "cmd.exe");
-  assert.equal(spawnCall.options.useConpty, true);
+  assert.equal(spawnCall.options.useConpty, false);
   assert.equal(spawnCall.options.cols, 100);
   assert.equal(spawnCall.options.rows, 40);
 
@@ -106,6 +106,26 @@ test("creates a persistent PTY and forwards input, output and resize", () => {
 
   fake.emitExit(0);
   assert.equal(manager.status().sessions.length, 0);
+  fs.rmSync(workspace, { recursive: true, force: true });
+});
+
+test("allows explicit ConPTY opt-in on Windows", () => {
+  const workspace = temporaryWorkspace();
+  let spawnOptions;
+  const manager = new TerminalManager({
+    workspace,
+    platform: "win32",
+    env: { ComSpec: "cmd.exe" },
+    useConpty: true,
+    spawnPty(_executable, _args, options) {
+      spawnOptions = options;
+      return new FakePty();
+    },
+  });
+
+  manager.create({ sessionId: "terminal-conpty", cwd: "." });
+  assert.equal(spawnOptions.useConpty, true);
+  manager.disposeAll();
   fs.rmSync(workspace, { recursive: true, force: true });
 });
 

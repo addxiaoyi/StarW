@@ -4,6 +4,7 @@
 import {
   type Component,
   createEffect,
+  createMemo,
   createSignal,
   For,
   onCleanup,
@@ -75,6 +76,7 @@ const CommandBlockView: Component<{
 );
 
 const TerminalPane: Component<TerminalPaneProps> = (props) => {
+  const isActive = createMemo(() => props.active);
   const [phase, setPhase] = createSignal<TerminalPhase>("starting");
   const [error, setError] = createSignal("");
   let host!: HTMLDivElement;
@@ -101,7 +103,7 @@ const TerminalPane: Component<TerminalPaneProps> = (props) => {
   };
 
   const fit = () => {
-    if (!mounted || !props.active || !terminal || !fitAddon) return;
+    if (!mounted || !isActive() || !terminal || !fitAddon) return;
     if (host.clientWidth < 20 || host.clientHeight < 20) return;
     fitAddon.fit();
     terminal.focus();
@@ -169,7 +171,7 @@ const TerminalPane: Component<TerminalPaneProps> = (props) => {
     setPhase("starting");
     setError("");
     terminal.write("\x1b[90mStarting OpenStar PTY...\x1b[0m\r\n");
-    if (props.active) requestAnimationFrame(fit);
+    if (isActive()) requestAnimationFrame(fit);
 
     try {
       const session = await createInteractiveTerminal(
@@ -194,7 +196,7 @@ const TerminalPane: Component<TerminalPaneProps> = (props) => {
         attached = undefined;
         showExit(exited);
       }
-      if (props.active) requestAnimationFrame(fit);
+      if (isActive()) requestAnimationFrame(fit);
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : String(cause);
       setError(message);
@@ -232,7 +234,7 @@ const TerminalPane: Component<TerminalPaneProps> = (props) => {
     });
     terminal.onResize(({ cols, rows }) => {
       const current = attached;
-      if (!current || !props.active) return;
+      if (!current || !isActive()) return;
       void resizeInteractiveTerminal(
         current.sessionId,
         current.instanceId,
@@ -246,12 +248,12 @@ const TerminalPane: Component<TerminalPaneProps> = (props) => {
       window.starcore?.onThemeChanged(() => {
         if (terminal) terminal.options.theme = terminalTheme();
       }) ?? (() => {});
-    if (props.active) void start();
+    if (isActive()) void start();
   });
 
   createEffect(() => {
     const nextKey = `${props.sessionId}\u0000${props.cwd}`;
-    const active = props.active;
+    const active = isActive();
     if (!mounted) return;
     if (nextKey !== targetKey) {
       targetKey = nextKey;
@@ -282,7 +284,7 @@ const TerminalPane: Component<TerminalPaneProps> = (props) => {
   return (
     <section
       class="sc-terminal-pane"
-      classList={{ "is-hidden": !props.active }}
+      classList={{ "is-hidden": !isActive() }}
       aria-label={`${props.sessionTitle} interactive terminal`}
     >
       <header class="sc-pane-toolbar">

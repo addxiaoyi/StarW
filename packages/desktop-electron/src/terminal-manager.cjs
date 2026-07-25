@@ -52,6 +52,10 @@ class TerminalManager {
   constructor(options = {}) {
     this.platform = options.platform || process.platform;
     this.environment = normalizeEnvironment(options.env || process.env);
+    this.useConpty =
+      this.platform === "win32" &&
+      (options.useConpty === true ||
+        this.environment.OPENSTAR_USE_CONPTY === "1");
     this.workspace = path.resolve(options.workspace || process.cwd());
     this.onEvent =
       typeof options.onEvent === "function" ? options.onEvent : () => {};
@@ -108,7 +112,7 @@ class TerminalManager {
       rows,
       cwd,
       env: environment,
-      useConpty: this.platform === "win32",
+      useConpty: this.useConpty,
     });
     const record = {
       sessionId,

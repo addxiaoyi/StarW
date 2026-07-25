@@ -1,6 +1,6 @@
 import {
   type Component,
-  Index,
+  For,
   Match,
   Show,
   Switch,
@@ -682,49 +682,51 @@ const WorkbenchShell: Component = () => {
               role="tablist"
               aria-label="Terminal sessions"
             >
-              {workbench().sessions.map((session) => (
-                <div
-                  class="sc-tab"
-                  classList={{
-                    "is-active": session.id === activeSession().id,
-                  }}
-                  role="tab"
-                  aria-selected={session.id === activeSession().id}
-                  tabIndex={session.id === activeSession().id ? 0 : -1}
-                  data-terminal-tab-id={session.id}
-                  title={`${session.title} — ${session.cwd}`}
-                  onClick={() => selectSession(session.id)}
-                  onKeyDown={(event) => {
-                    if (
-                      event.key === "ArrowLeft" ||
-                      event.key === "ArrowRight" ||
-                      event.key === "Home" ||
-                      event.key === "End"
-                    ) {
-                      event.preventDefault();
-                      moveTerminalTabFocus(session.id, event.key);
-                    } else if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      selectSession(session.id);
-                    }
-                  }}
-                >
-                  <Icon name="terminal" size="small" />
-                  <span>{session.title}</span>
-                  <span class={`sc-tab-state is-${session.health}`} />
-                  <button
-                    type="button"
-                    class="sc-tab-close"
-                    aria-label={`Close ${session.title}`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void closeSession(session.id);
+              <For each={workbench().sessions}>
+                {(session) => (
+                  <div
+                    class="sc-tab"
+                    classList={{
+                      "is-active": session.id === activeSession().id,
+                    }}
+                    role="tab"
+                    aria-selected={session.id === activeSession().id}
+                    tabIndex={session.id === activeSession().id ? 0 : -1}
+                    data-terminal-tab-id={session.id}
+                    title={`${session.title} — ${session.cwd}`}
+                    onClick={() => selectSession(session.id)}
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === "ArrowLeft" ||
+                        event.key === "ArrowRight" ||
+                        event.key === "Home" ||
+                        event.key === "End"
+                      ) {
+                        event.preventDefault();
+                        moveTerminalTabFocus(session.id, event.key);
+                      } else if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        selectSession(session.id);
+                      }
                     }}
                   >
-                    <Icon name="close-small" size="small" />
-                  </button>
-                </div>
-              ))}
+                    <Icon name="terminal" size="small" />
+                    <span>{session.title}</span>
+                    <span class={`sc-tab-state is-${session.health}`} />
+                    <button
+                      type="button"
+                      class="sc-tab-close"
+                      aria-label={`Close ${session.title}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void closeSession(session.id);
+                      }}
+                    >
+                      <Icon name="close-small" size="small" />
+                    </button>
+                  </div>
+                )}
+              </For>
               <button
                 type="button"
                 class="sc-add-tab"
@@ -741,30 +743,29 @@ const WorkbenchShell: Component = () => {
               class="sc-terminal-stack"
               classList={{ "is-hidden": mode() !== "terminal" }}
             >
-              <Index each={workbench().sessions}>
+              <For each={workbench().sessions}>
                 {(session) => (
                   <TerminalPane
-                    sessionId={session().id}
-                    sessionTitle={session().title}
-                    cwd={session().cwd}
-                    branch={session().branch}
-                    blocks={blocks()[session().id] ?? []}
+                    sessionId={session.id}
+                    sessionTitle={session.title}
+                    cwd={session.cwd}
+                    branch={session.branch}
+                    blocks={blocks()[session.id] ?? []}
                     active={
-                      mode() === "terminal" &&
-                      session().id === activeSession().id
+                      mode() === "terminal" && session.id === activeSession().id
                     }
-                    commandRunning={Boolean(runningBySession()[session().id])}
+                    commandRunning={Boolean(runningBySession()[session.id])}
                     onRun={runCommand}
-                    onCancel={() => cancelCommandForSession(session().id)}
+                    onCancel={() => cancelCommandForSession(session.id)}
                     onClear={() =>
                       setBlocks((current) => ({
                         ...current,
-                        [session().id]: [],
+                        [session.id]: [],
                       }))
                     }
                   />
                 )}
-              </Index>
+              </For>
             </div>
 
             <Show when={mode() !== "terminal"}>
