@@ -72,7 +72,7 @@ jobs:
           bash scripts/changelog.sh --channel "$CHANNEL" --release-tag "$TAG_NAME"
 
       - name: Create draft GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           body_path: changelog-draft.md
           draft: true
