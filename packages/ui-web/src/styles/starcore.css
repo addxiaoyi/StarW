@@ -1244,6 +1244,11 @@ pre {
   flex: 1;
 }
 
+.sc-app.is-sidebar-closed .sc-sidebar,
+.sc-app.is-sidebar-closed .sc-panel-resizer.is-sidebar {
+  display: none;
+}
+
 .sc-workbench {
   display: flex;
   flex: 1;

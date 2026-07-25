@@ -30,6 +30,45 @@ interface ChatMessage {
   optimistic?: boolean;
 }
 
+type AgentMode = "build" | "plan";
+
+const PLAN_MODE_PREFIX =
+  "[OpenStar Plan Mode]\nAnalyze the request, inspect relevant context, and produce a concrete implementation plan before making changes. Do not modify files or execute destructive actions unless the user explicitly switches to Build mode.\n\n";
+
+const QUICK_TASKS: Array<{
+  title: string;
+  detail: string;
+  prompt: string;
+  mode: AgentMode;
+}> = [
+  {
+    title: "分析仓库",
+    detail: "梳理结构、风险与下一步",
+    prompt: "分析当前仓库的架构、主要模块、质量风险和最值得优先推进的改进。",
+    mode: "plan",
+  },
+  {
+    title: "修复问题",
+    detail: "定位根因并完成验证",
+    prompt:
+      "检查当前项目中最明确且可复现的问题，定位根因、修复并运行相关验证。",
+    mode: "build",
+  },
+  {
+    title: "补齐测试",
+    detail: "覆盖薄弱边界和回归风险",
+    prompt: "审查现有测试覆盖，选择一个高风险缺口补充可靠的自动化测试。",
+    mode: "build",
+  },
+  {
+    title: "规划功能",
+    detail: "先形成可执行方案",
+    prompt:
+      "针对下一项产品功能，先给出用户流程、技术方案、风险和分阶段实施计划。",
+    mode: "plan",
+  },
+];
+
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -38,8 +77,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-const textOf = (message: ChatMessage) =>
-  message.content.map((item) => item.text || "").join("\n");
+const textOf = (message: ChatMessage) => {
+  const text = message.content.map((item) => item.text || "").join("\n");
+  return text.startsWith(PLAN_MODE_PREFIX)
+    ? text.slice(PLAN_MODE_PREFIX.length)
+    : text;
+};
 
 const Notice: Component<{ message: string }> = (props) => (
   <div
@@ -56,6 +99,7 @@ const ChatRuntimeView: Component = () => {
   const [activeId, setActiveId] = createSignal("");
   const [messages, setMessages] = createSignal<ChatMessage[]>([]);
   const [input, setInput] = createSignal("");
+  const [agentMode, setAgentMode] = createSignal<AgentMode>("build");
   const [busySessionId, setBusySessionId] = createSignal("");
   const [error, setError] = createSignal("");
   const [providerLabel, setProviderLabel] = createSignal("");
@@ -170,7 +214,15 @@ const ChatRuntimeView: Component = () => {
     }
   };
 
-  const createSession = async (name = "New Session") => {
+  const chooseQuickTask = (task: (typeof QUICK_TASKS)[number]) => {
+    setAgentMode(task.mode);
+    setInput(task.prompt);
+    requestAnimationFrame(() =>
+      document.getElementById("chat-composer")?.focus(),
+    );
+  };
+
+  const createSession = async (name = "New Task") => {
     const result = await desktopRequest<{ session: ChatSession }>(
       "sessions/create",
       { name },
@@ -186,6 +238,8 @@ const ChatRuntimeView: Component = () => {
   const sendMessage = async (override?: string) => {
     const text = (override ?? input()).trim();
     if (!text || busySessionId()) return;
+    const promptText =
+      agentMode() === "plan" ? `${PLAN_MODE_PREFIX}${text}` : text;
     let sessionId = activeId();
     setError("");
     setStreamingText("");
@@ -208,7 +262,9 @@ const ChatRuntimeView: Component = () => {
         "sessions/prompt",
         {
           session_id: sessionId,
-          messages: [{ role: "user", content: [{ type: "text", text }] }],
+          messages: [
+            { role: "user", content: [{ type: "text", text: promptText }] },
+          ],
         },
         3_700_000,
       );
@@ -310,24 +366,29 @@ const ChatRuntimeView: Component = () => {
   });
 
   return (
-    <section class="runtime-split chat-runtime grid h-full min-h-0 grid-cols-[240px_minmax(0,1fr)] bg-background">
+    <section class="runtime-split chat-runtime grid h-full min-h-0 grid-cols-[280px_minmax(0,1fr)] bg-background">
       <aside class="runtime-sidebar flex min-h-0 flex-col border-r border-border">
-        <header class="flex items-center justify-between border-b border-border px-3 py-2">
-          <strong class="text-sm">模型会话</strong>
+        <header class="flex items-center justify-between border-b border-border px-3 py-3">
+          <div class="min-w-0">
+            <span class="block text-[10px] font-semibold tracking-[0.14em] text-muted-foreground">
+              TASKS
+            </span>
+            <strong class="block truncate text-sm">Agent 工作任务</strong>
+          </div>
           <button
             class="sc-icon-button"
-            aria-label="新建 Chat 会话"
-            title="新建会话"
+            aria-label="新建 Agent 任务"
+            title="新建任务"
             onClick={() => void createSession()}
           >
-            <Icon name="plus-small" size="small" />
+            <Icon name="new-session" size="small" />
           </button>
         </header>
         <div class="min-h-0 flex-1 overflow-auto">
           <For each={sessions()}>
             {(session) => (
               <button
-                class="block w-full border-b border-border/50 px-3 py-2 text-left"
+                class="group flex w-full items-center gap-2 border-b border-border/50 px-3 py-2.5 text-left transition-colors hover:bg-muted/60"
                 classList={{ "bg-muted": activeId() === session.id }}
                 aria-current={activeId() === session.id ? "page" : undefined}
                 title={session.name}
@@ -337,27 +398,76 @@ const ChatRuntimeView: Component = () => {
                   void loadMessages(session.id);
                 }}
               >
-                <strong class="block truncate text-sm">{session.name}</strong>
-                <small class="text-muted-foreground">
-                  {new Date(
-                    session.updated_at || session.created_at,
-                  ).toLocaleString()}
-                </small>
+                <span
+                  class="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/50"
+                  classList={{
+                    "bg-amber-400":
+                      activeId() === session.id &&
+                      busySessionId() === session.id,
+                    "bg-emerald-400":
+                      activeId() === session.id &&
+                      busySessionId() !== session.id,
+                  }}
+                />
+                <span class="min-w-0 flex-1">
+                  <strong class="block truncate text-sm font-medium">
+                    {session.name}
+                  </strong>
+                  <small class="block truncate text-muted-foreground">
+                    {new Date(
+                      session.updated_at || session.created_at,
+                    ).toLocaleString()}
+                  </small>
+                </span>
+                <Show
+                  when={
+                    activeId() === session.id && busySessionId() === session.id
+                  }
+                >
+                  <span class="rounded border border-amber-400/40 bg-amber-400/10 px-1.5 py-0.5 text-[10px] text-amber-300">
+                    RUNNING
+                  </span>
+                </Show>
               </button>
             )}
           </For>
         </div>
+        <footer class="flex items-center gap-2 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+          <Icon name="shield" size="small" />
+          <span>本地优先 · 会话持久化</span>
+        </footer>
       </aside>
 
       <main class="runtime-main flex min-h-0 flex-col">
-        <header class="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
-          <span class="text-sm font-medium">Chat</span>
-          <span
-            class="min-w-0 truncate text-xs text-muted-foreground"
-            title={providerLabel()}
-          >
-            {providerLabel()}
-          </span>
+        <header class="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
+          <div class="min-w-0">
+            <span class="block text-[10px] font-semibold tracking-[0.14em] text-muted-foreground">
+              ACTIVE TASK
+            </span>
+            <strong class="block truncate text-sm">
+              {sessions().find((session) => session.id === activeId())?.name ||
+                "未选择任务"}
+            </strong>
+          </div>
+          <div class="flex min-w-0 items-center gap-2">
+            <span
+              class="max-w-72 truncate text-xs text-muted-foreground"
+              title={providerLabel()}
+            >
+              {providerLabel()}
+            </span>
+            <span
+              class="rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide"
+              classList={{
+                "border-amber-400/40 bg-amber-400/10 text-amber-300":
+                  Boolean(busySessionId()),
+                "border-emerald-400/40 bg-emerald-400/10 text-emerald-300":
+                  !busySessionId(),
+              }}
+            >
+              {busySessionId() ? "RUNNING" : "READY"}
+            </span>
+          </div>
         </header>
         <Show when={providerError()}>
           <div class="px-3 pt-3">
@@ -394,11 +504,40 @@ const ChatRuntimeView: Component = () => {
           <Show
             when={messages().length}
             fallback={
-              <div class="flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-muted-foreground">
-                <strong class="text-foreground">开始一个真实模型会话</strong>
-                <span class="max-w-lg text-sm">
-                  回复直接来自设置中选定的 Provider。
+              <div class="flex h-full flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
+                <div class="grid h-12 w-12 place-items-center rounded-xl border border-border bg-card text-foreground shadow-sm">
+                  <Icon name="task" size="large" />
+                </div>
+                <strong class="text-base text-foreground">
+                  从一个具体的工程任务开始
+                </strong>
+                <span class="max-w-xl text-sm">
+                  像 OpenHands 一样围绕任务组织会话，并使用 Build 或 Plan
+                  模式控制代理行为。
                 </span>
+                <div class="mt-2 grid w-full max-w-2xl grid-cols-2 gap-2">
+                  <For each={QUICK_TASKS}>
+                    {(task) => (
+                      <button
+                        type="button"
+                        class="rounded-lg border border-border bg-card p-3 text-left transition-colors hover:border-ring hover:bg-muted/50"
+                        onClick={() => chooseQuickTask(task)}
+                      >
+                        <span class="flex items-center justify-between gap-2">
+                          <strong class="text-sm text-foreground">
+                            {task.title}
+                          </strong>
+                          <span class="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
+                            {task.mode}
+                          </span>
+                        </span>
+                        <small class="mt-1 block text-muted-foreground">
+                          {task.detail}
+                        </small>
+                      </button>
+                    )}
+                  </For>
+                </div>
               </div>
             }
           >
@@ -515,57 +654,96 @@ const ChatRuntimeView: Component = () => {
         </div>
 
         <form
-          class="flex gap-2 border-t border-border p-3"
+          class="border-t border-border bg-card/30 p-3"
           onSubmit={(event) => {
             event.preventDefault();
             void sendMessage();
           }}
         >
-          <label class="sr-only" for="chat-composer">
-            发送给当前 Provider
-          </label>
-          <textarea
-            id="chat-composer"
-            class="min-h-20 flex-1 resize-y rounded-md border border-border bg-background p-3 text-sm outline-none focus:border-ring"
-            aria-label="发送给当前 Provider"
-            placeholder={
-              busySessionId()
-                ? "可以继续草拟下一条消息…"
-                : "发送给当前 Provider…"
-            }
-            value={input()}
-            onInput={(event) => setInput(event.currentTarget.value)}
-            onKeyDown={(event) => {
-              if (
-                event.key === "Enter" &&
-                !event.shiftKey &&
-                !event.isComposing
-              ) {
-                event.preventDefault();
-                void sendMessage();
-              }
-            }}
-          />
-          <Show
-            when={busySessionId()}
-            fallback={
-              <button
-                class="oc-button oc-button-primary self-end"
-                disabled={!input().trim()}
-              >
-                发送
-              </button>
-            }
-          >
-            <button
-              type="button"
-              class="oc-button self-end"
-              onClick={() => void stopGeneration()}
+          <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div
+              class="inline-flex rounded-md border border-border bg-background p-0.5"
+              aria-label="Agent execution mode"
             >
-              <Icon name="stop" size="small" />
-              停止
-            </button>
-          </Show>
+              <button
+                type="button"
+                class="rounded px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors"
+                classList={{
+                  "bg-muted text-foreground shadow-sm": agentMode() === "build",
+                }}
+                aria-pressed={agentMode() === "build"}
+                onClick={() => setAgentMode("build")}
+              >
+                Build
+              </button>
+              <button
+                type="button"
+                class="rounded px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors"
+                classList={{
+                  "bg-muted text-foreground shadow-sm": agentMode() === "plan",
+                }}
+                aria-pressed={agentMode() === "plan"}
+                onClick={() => setAgentMode("plan")}
+              >
+                Plan
+              </button>
+            </div>
+            <span class="text-xs text-muted-foreground">
+              {agentMode() === "plan"
+                ? "只分析和规划，不直接修改文件"
+                : "允许代理实施、运行命令并验证结果"}
+            </span>
+          </div>
+          <div class="flex items-end gap-2">
+            <label class="sr-only" for="chat-composer">
+              发送给当前 Provider
+            </label>
+            <textarea
+              id="chat-composer"
+              class="min-h-24 flex-1 resize-y rounded-lg border border-border bg-background p-3 text-sm outline-none transition-colors focus:border-ring"
+              aria-label="发送给当前 Provider"
+              placeholder={
+                busySessionId()
+                  ? "可以继续草拟下一条消息…"
+                  : agentMode() === "plan"
+                    ? "描述目标，代理将先分析并给出实施计划…"
+                    : "描述需要代理完成和验证的工程任务…"
+              }
+              value={input()}
+              onInput={(event) => setInput(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter" &&
+                  !event.shiftKey &&
+                  !event.isComposing
+                ) {
+                  event.preventDefault();
+                  void sendMessage();
+                }
+              }}
+            />
+            <Show
+              when={busySessionId()}
+              fallback={
+                <button
+                  class="oc-button oc-button-primary self-end"
+                  disabled={!input().trim()}
+                >
+                  <Icon name="arrow-up" size="small" />
+                  发送
+                </button>
+              }
+            >
+              <button
+                type="button"
+                class="oc-button self-end"
+                onClick={() => void stopGeneration()}
+              >
+                <Icon name="stop" size="small" />
+                停止
+              </button>
+            </Show>
+          </div>
         </form>
       </main>
     </section>
