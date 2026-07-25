@@ -14,7 +14,7 @@
     "@openstar/browser": "workspace:*",
     "@openstar/core": "workspace:*",
     "@types/marked": "^6.0.0",
-    "marked": "^18.0.6",
+    "marked": "^18.0.7",
     "solid-js": "^1.9.0",
     "xterm": "^5.3.0",
     "xterm-addon-fit": "^0.8.0"
