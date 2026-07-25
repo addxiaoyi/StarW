@@ -41,7 +41,7 @@ const AgentOrchestrationPanel: Component<AgentOrchestrationPanelProps> = (
   };
 
   return (
-    <section class="mb-4 rounded-md border border-border bg-card p-3">
+    <section class="oc-orchestration-panel mb-4 rounded-md border border-border bg-card p-3">
       <div class="flex flex-wrap items-center gap-2">
         <strong class="text-sm">Agent DAG 编排</strong>
         <span class="text-xs text-muted-foreground">

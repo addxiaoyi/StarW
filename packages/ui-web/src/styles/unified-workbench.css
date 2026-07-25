@@ -1,0 +1,855 @@
+/* Unified OpenCode-derived design language for every OpenStar desktop surface. */
+
+:root {
+  --oc-shell: #0b0b0a;
+  --oc-surface: #121211;
+  --oc-raised: #181817;
+  --oc-hover: #20201f;
+  --oc-active: #262624;
+  --oc-border: #2a2a28;
+  --oc-border-strong: #3a3a36;
+  --oc-text: #ecece8;
+  --oc-text-muted: #aaa9a2;
+  --oc-text-faint: #777770;
+  --oc-accent: #63c97d;
+  --oc-danger: #ef6f72;
+  --oc-warning: #d9a441;
+  --oc-success: #62c77a;
+  --oc-radius-control: 6px;
+  --oc-radius-panel: 10px;
+  --oc-shadow-raised: 0 12px 32px rgb(0 0 0 / 18%);
+
+  --bg: var(--oc-shell);
+  --bg-2: var(--oc-surface);
+  --bg-3: var(--oc-raised);
+  --bg-4: var(--oc-hover);
+  --border: var(--oc-border);
+  --border-hi: var(--oc-border-strong);
+  --text: var(--oc-text);
+  --text-2: var(--oc-text-muted);
+  --text-3: var(--oc-text-faint);
+  --green: var(--oc-accent);
+  --accent: var(--oc-accent);
+  --accent-2: color-mix(in srgb, var(--oc-accent) 82%, white);
+  --red: var(--oc-danger);
+  --yellow: var(--oc-warning);
+  --color-background: var(--oc-shell);
+  --color-background-deep: #070706;
+  --color-surface: var(--oc-surface);
+  --color-surface-2: var(--oc-raised);
+  --color-card: var(--oc-raised);
+  --color-border: var(--oc-border);
+  --color-border-hi: var(--oc-border-strong);
+  --color-foreground: var(--oc-text);
+  --color-foreground-2: var(--oc-text-muted);
+  --color-muted: var(--oc-text-faint);
+  --color-muted-foreground: var(--oc-text-muted);
+  --color-ring: var(--oc-accent);
+}
+
+html[data-theme="light"] {
+  --oc-shell: #ecece7;
+  --oc-surface: #f7f7f5;
+  --oc-raised: #ffffff;
+  --oc-hover: #f0f0ec;
+  --oc-active: #e8e8e3;
+  --oc-border: #d8d8d2;
+  --oc-border-strong: #bdbdb5;
+  --oc-text: #1b1b19;
+  --oc-text-muted: #575750;
+  --oc-text-faint: #787871;
+  --oc-accent: #238849;
+  --oc-danger: #c94f52;
+  --oc-warning: #9a6c16;
+  --oc-success: #238849;
+  --oc-shadow-raised: 0 12px 30px rgb(37 37 32 / 8%);
+  --color-background-deep: #e5e5df;
+}
+
+html[data-theme="light"],
+html[data-theme="dark"] {
+  --bg: var(--oc-shell);
+  --bg-2: var(--oc-surface);
+  --bg-3: var(--oc-raised);
+  --bg-4: var(--oc-hover);
+  --border: var(--oc-border);
+  --border-hi: var(--oc-border-strong);
+  --text: var(--oc-text);
+  --text-2: var(--oc-text-muted);
+  --text-3: var(--oc-text-faint);
+  --green: var(--oc-accent);
+  --accent: var(--oc-accent);
+  --accent-2: color-mix(in srgb, var(--oc-accent) 82%, white);
+  --red: var(--oc-danger);
+  --yellow: var(--oc-warning);
+  --color-background: var(--oc-shell);
+  --color-surface: var(--oc-surface);
+  --color-surface-2: var(--oc-raised);
+  --color-card: var(--oc-raised);
+  --color-border: var(--oc-border);
+  --color-border-hi: var(--oc-border-strong);
+  --color-foreground: var(--oc-text);
+  --color-foreground-2: var(--oc-text-muted);
+  --color-muted: var(--oc-text-faint);
+  --color-muted-foreground: var(--oc-text-muted);
+  --color-ring: var(--oc-accent);
+}
+
+body {
+  background: var(--oc-shell);
+  color: var(--oc-text);
+}
+
+/* Desktop shell */
+.sc-app.is-runtime-mode {
+  background: var(--oc-shell);
+  color: var(--oc-text);
+}
+
+.sc-app.is-runtime-mode > .sc-titlebar {
+  height: 36px;
+  min-height: 36px;
+  gap: 6px;
+  padding: 4px 146px 4px 8px;
+  border: 0;
+  background: var(--oc-shell);
+}
+
+.sc-app.is-runtime-mode .sc-brand {
+  height: 28px;
+  gap: 7px;
+  padding: 0 8px;
+  border-radius: var(--oc-radius-control);
+  background: var(--oc-surface);
+  box-shadow: inset 0 0 0 1px var(--oc-border);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.sc-app.is-runtime-mode .sc-brand-mark {
+  display: inline-flex;
+  color: var(--oc-accent);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.sc-app.is-runtime-mode .sc-title-context {
+  height: 28px;
+  flex: 1;
+  gap: 5px;
+  margin-left: 0;
+  padding: 0 8px;
+  border-radius: var(--oc-radius-control);
+  color: var(--oc-text-faint);
+  font-size: 12px;
+}
+
+.sc-app.is-runtime-mode .sc-title-context strong {
+  color: var(--oc-text-muted);
+  font-weight: 500;
+}
+
+.sc-app.is-runtime-mode .sc-workbench {
+  gap: 8px;
+  padding: 8px;
+  background: var(--oc-shell);
+}
+
+.sc-app.is-runtime-mode .sc-rail {
+  width: 44px;
+  gap: 2px;
+  padding: 5px 4px;
+  border: 1px solid var(--oc-border);
+  border-radius: var(--oc-radius-panel);
+  background: var(--oc-surface);
+  box-shadow: var(--oc-shadow-raised);
+}
+
+.sc-app.is-runtime-mode .sc-rail-button {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--oc-radius-control);
+  color: var(--oc-text-faint);
+  transition:
+    background 100ms ease,
+    color 100ms ease;
+}
+
+.sc-app.is-runtime-mode .sc-rail-button:hover {
+  background: var(--oc-hover);
+  color: var(--oc-text);
+}
+
+.sc-app.is-runtime-mode .sc-rail-button.is-active {
+  background: var(--oc-active);
+  color: var(--oc-text);
+  box-shadow: inset 0 0 0 1px var(--oc-border);
+}
+
+.sc-app.is-runtime-mode .sc-rail-button.is-active::after {
+  content: "";
+  position: absolute;
+  left: -5px;
+  width: 2px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--oc-accent);
+}
+
+.sc-app.is-runtime-mode .sc-sidebar,
+.sc-app.is-runtime-mode .sc-content,
+.sc-app.is-runtime-mode .sc-inspector {
+  border: 1px solid var(--oc-border);
+  border-radius: var(--oc-radius-panel);
+  background: var(--oc-surface);
+  box-shadow: var(--oc-shadow-raised);
+  overflow: hidden;
+}
+
+.sc-app.is-runtime-mode .sc-sidebar {
+  border-right: 1px solid var(--oc-border);
+}
+
+.sc-app.is-runtime-mode .sc-sidebar-section {
+  border-bottom-color: var(--oc-border);
+  padding: 10px;
+}
+
+.sc-app.is-runtime-mode .sc-session-row,
+.sc-app.is-runtime-mode .sc-runtime-row {
+  margin: 2px 6px;
+  border-radius: var(--oc-radius-control);
+}
+
+.sc-app.is-runtime-mode .sc-session-row:hover,
+.sc-app.is-runtime-mode .sc-runtime-row:hover {
+  background: var(--oc-hover);
+}
+
+.sc-app.is-runtime-mode .sc-session-row.is-active,
+.sc-app.is-runtime-mode .sc-runtime-row.is-active {
+  background: var(--oc-active);
+  box-shadow: inset 0 0 0 1px var(--oc-border);
+}
+
+.sc-app.is-runtime-mode .sc-content {
+  min-width: 0;
+}
+
+.sc-app.is-runtime-mode .sc-tab-strip {
+  min-height: 36px;
+  height: 36px;
+  gap: 4px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--oc-border);
+  background: var(--oc-surface);
+}
+
+.sc-app.is-runtime-mode .sc-tab {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--oc-radius-control);
+  color: var(--oc-text-faint);
+}
+
+.sc-app.is-runtime-mode .sc-tab:hover {
+  background: var(--oc-hover);
+  color: var(--oc-text);
+}
+
+.sc-app.is-runtime-mode .sc-tab.is-active {
+  background: var(--oc-active);
+  color: var(--oc-text);
+  box-shadow: inset 0 0 0 1px var(--oc-border);
+}
+
+.sc-app.is-runtime-mode .sc-statusbar {
+  min-height: 22px;
+  height: 22px;
+  gap: 8px;
+  padding: 0 10px;
+  border: 0;
+  background: var(--oc-shell);
+  color: var(--oc-text-faint);
+  font-size: 10px;
+}
+
+.sc-app.is-runtime-mode .sc-panel-resizer {
+  width: 1px;
+  flex-basis: 1px;
+  margin-inline: -4px;
+}
+
+.sc-app.is-runtime-mode .sc-panel-resizer::after {
+  left: -3px;
+  width: 7px;
+  background: transparent;
+}
+
+.sc-app.is-runtime-mode .sc-panel-resizer:hover::after,
+.sc-app.is-runtime-mode .sc-panel-resizer:active::after {
+  background: color-mix(in srgb, var(--oc-accent) 35%, transparent);
+}
+
+/* Shared controls */
+.oc-button,
+.sc-text-button {
+  display: inline-flex;
+  min-height: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid var(--oc-border);
+  border-radius: var(--oc-radius-control);
+  background: var(--oc-raised);
+  color: var(--oc-text-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: default;
+  transition:
+    background 100ms ease,
+    border-color 100ms ease,
+    color 100ms ease;
+}
+
+.oc-button:hover:not(:disabled),
+.sc-text-button:hover:not(:disabled) {
+  border-color: var(--oc-border-strong);
+  background: var(--oc-hover);
+  color: var(--oc-text);
+}
+
+.oc-button:focus-visible,
+.sc-text-button:focus-visible,
+.sc-icon-button:focus-visible,
+.oc-runtime-page :where(input, textarea, select):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--oc-accent) 48%, transparent);
+  outline-offset: 1px;
+}
+
+.oc-button:disabled,
+.sc-text-button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.oc-button-primary {
+  border-color: var(--oc-text);
+  background: var(--oc-text);
+  color: var(--oc-shell);
+}
+
+.oc-button-primary:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--oc-text) 82%, var(--oc-border));
+  background: color-mix(in srgb, var(--oc-text) 88%, var(--oc-surface));
+  color: var(--oc-shell);
+}
+
+.sc-icon-button {
+  display: inline-flex;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--oc-radius-control);
+  background: transparent;
+  color: var(--oc-text-faint);
+  cursor: default;
+}
+
+.sc-icon-button:hover:not(:disabled) {
+  background: var(--oc-hover);
+  color: var(--oc-text);
+}
+
+.text-error,
+.oc-button.text-error {
+  color: var(--oc-danger);
+}
+
+.text-warning {
+  color: var(--oc-warning);
+}
+
+.text-success {
+  color: var(--oc-success);
+}
+
+/* Runtime page foundation */
+.oc-runtime-page {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--oc-surface) !important;
+  color: var(--oc-text);
+  user-select: none;
+}
+
+.oc-runtime-page :where(input, textarea, pre, code, [contenteditable]) {
+  user-select: text;
+}
+
+.oc-page-header {
+  display: flex;
+  min-height: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px !important;
+  border-bottom: 1px solid var(--oc-border) !important;
+  background: var(--oc-surface);
+}
+
+.oc-page-header > strong,
+.oc-page-heading strong {
+  color: var(--oc-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.oc-page-heading {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.oc-page-heading small {
+  overflow: hidden;
+  color: var(--oc-text-faint);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.oc-page-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.oc-page-actions::-webkit-scrollbar {
+  display: none;
+}
+
+.oc-page-body {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+}
+
+.oc-runtime-page .runtime-sidebar {
+  border-right: 1px solid var(--oc-border) !important;
+  background: var(--oc-raised);
+}
+
+.oc-runtime-page .runtime-main {
+  background: var(--oc-surface);
+}
+
+.oc-runtime-page
+  :where(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+  min-height: 32px;
+  border: 1px solid var(--oc-border) !important;
+  border-radius: var(--oc-radius-control) !important;
+  background: var(--oc-raised) !important;
+  color: var(--oc-text) !important;
+  font-family: inherit;
+  font-size: 12px;
+  box-shadow: none !important;
+}
+
+.oc-runtime-page textarea {
+  line-height: 1.55;
+}
+
+.oc-runtime-page
+  :where(
+    input:not([type="checkbox"]):not([type="radio"]),
+    textarea,
+    select
+  ):hover {
+  border-color: var(--oc-border-strong) !important;
+}
+
+.oc-runtime-page :where(input, textarea)::placeholder {
+  color: var(--oc-text-faint);
+}
+
+.oc-runtime-page :where(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--oc-accent);
+}
+
+.oc-runtime-page label,
+.oc-runtime-page legend {
+  color: var(--oc-text-muted);
+  font-weight: 500;
+}
+
+.oc-runtime-page small,
+.oc-runtime-page .text-muted-foreground {
+  color: var(--oc-text-faint);
+}
+
+.oc-empty-state {
+  display: flex;
+  height: 100%;
+  min-height: 180px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 32px;
+  text-align: center;
+  color: var(--oc-text-faint);
+}
+
+.oc-empty-state::before {
+  content: "";
+  width: 28px;
+  height: 28px;
+  margin-bottom: 4px;
+  border: 1px solid var(--oc-border);
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--oc-raised), var(--oc-hover));
+  box-shadow: inset 0 0 0 5px var(--oc-surface);
+}
+
+.oc-empty-state strong {
+  color: var(--oc-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.oc-empty-state span {
+  max-width: 480px;
+  font-size: 11px;
+}
+
+.oc-notice {
+  border: 1px solid var(--oc-border);
+  border-radius: var(--oc-radius-control);
+  padding: 8px 10px;
+  background: var(--oc-raised);
+  color: var(--oc-text-muted);
+  font-size: 12px;
+}
+
+.oc-notice-error {
+  border-color: color-mix(in srgb, var(--oc-danger) 35%, var(--oc-border));
+  background: color-mix(in srgb, var(--oc-danger) 8%, var(--oc-raised));
+  color: var(--oc-danger);
+}
+
+.oc-runtime-page :where(pre, code) {
+  border-color: var(--oc-border) !important;
+  background: color-mix(
+    in srgb,
+    var(--oc-shell) 72%,
+    var(--oc-raised)
+  ) !important;
+}
+
+.oc-runtime-page :where(article, details) {
+  border-color: var(--oc-border) !important;
+}
+
+/* Page-specific structure */
+.oc-files-page .files-runtime-toolbar {
+  flex-wrap: nowrap;
+}
+
+.oc-files-page .files-runtime {
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+
+.oc-files-page .files-runtime-sidebar,
+.oc-agents-page .agents-runtime-sidebar,
+.oc-skills-page .skills-runtime-sidebar,
+.oc-mcp-page .mcp-runtime-sidebar {
+  padding: 8px;
+}
+
+.oc-files-page .files-runtime-sidebar > div {
+  margin-bottom: 2px;
+  border: 0 !important;
+  border-radius: var(--oc-radius-control);
+  overflow: hidden;
+}
+
+.oc-files-page .files-runtime-sidebar > div:hover {
+  background: var(--oc-hover);
+}
+
+.oc-files-page .files-runtime-sidebar button[aria-current="page"] {
+  background: var(--oc-active) !important;
+  box-shadow: inset 0 0 0 1px var(--oc-border);
+}
+
+.oc-files-page .files-runtime-main > div > div:first-child {
+  min-height: 38px;
+  border-bottom-color: var(--oc-border) !important;
+  background: var(--oc-raised);
+}
+
+.oc-files-page #file-editor {
+  background: var(--oc-surface) !important;
+  caret-color: var(--oc-text);
+}
+
+.oc-files-page .files-runtime-main pre[aria-hidden="true"] {
+  border-radius: 0 !important;
+  background: var(--oc-raised) !important;
+  color: var(--oc-text-faint);
+}
+
+.oc-agents-page .agents-runtime,
+.oc-skills-page .skills-runtime,
+.oc-mcp-page .mcp-runtime {
+  grid-template-columns: 300px minmax(0, 1fr);
+}
+
+.oc-agents-page .agents-runtime-sidebar > button,
+.oc-skills-page .skills-runtime-sidebar > button {
+  margin-bottom: 4px;
+  border-color: transparent !important;
+  border-radius: var(--oc-radius-control) !important;
+  background: transparent;
+  padding: 9px 10px;
+}
+
+.oc-agents-page .agents-runtime-sidebar > button:hover,
+.oc-skills-page .skills-runtime-sidebar > button:hover {
+  background: var(--oc-hover);
+}
+
+.oc-agents-page .agents-runtime-sidebar > button.border-ring,
+.oc-skills-page .skills-runtime-sidebar > button.border-ring {
+  border-color: var(--oc-border) !important;
+  background: var(--oc-active) !important;
+  box-shadow: inset 2px 0 0 var(--oc-accent);
+}
+
+.oc-agent-editor,
+.oc-orchestration-panel,
+.oc-agents-page .agents-runtime-main > section {
+  border: 1px solid var(--oc-border) !important;
+  border-radius: 8px !important;
+  background: var(--oc-raised) !important;
+  box-shadow: none;
+}
+
+.oc-agent-editor {
+  margin-top: 8px !important;
+}
+
+.oc-agents-page .agents-runtime-main {
+  padding: 12px;
+}
+
+.oc-agents-page .agents-runtime-main article,
+.oc-agents-page .agents-runtime-main details {
+  border-radius: var(--oc-radius-control) !important;
+  background: var(--oc-surface) !important;
+}
+
+.oc-mcp-page .mcp-runtime-sidebar article {
+  margin-bottom: 4px;
+  border-color: var(--oc-border) !important;
+  border-radius: var(--oc-radius-control) !important;
+  background: var(--oc-surface);
+  padding: 10px;
+}
+
+.oc-mcp-page .mcp-runtime-sidebar article:hover {
+  background: var(--oc-hover);
+}
+
+.oc-mcp-page .mcp-runtime-sidebar article button.border-ring {
+  background: var(--oc-active) !important;
+}
+
+.oc-skills-page .skills-runtime-main,
+.oc-mcp-page .mcp-runtime-main {
+  padding: 14px;
+}
+
+.oc-skills-page .skills-runtime-main > header {
+  min-height: 40px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--oc-border);
+}
+
+.oc-browser-body {
+  min-height: 0;
+}
+
+.oc-browser-page .oc-focus-card {
+  width: min(680px, 100%);
+  border: 1px solid var(--oc-border) !important;
+  border-radius: var(--oc-radius-panel) !important;
+  background: var(--oc-raised) !important;
+  box-shadow: var(--oc-shadow-raised);
+}
+
+.oc-browser-page h1 {
+  color: var(--oc-text);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.oc-settings-page {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.oc-settings-scroll {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.oc-settings-content {
+  width: min(1040px, 100%);
+  margin: 0 auto;
+  padding: 18px 20px 36px;
+}
+
+.oc-settings-header {
+  width: 100%;
+  min-height: 44px;
+  height: 44px;
+  padding: 7px 12px !important;
+  background: var(--oc-surface);
+}
+
+.oc-settings-content > section {
+  border: 1px solid var(--oc-border) !important;
+  border-radius: 8px !important;
+  background: var(--oc-raised) !important;
+  padding: 14px !important;
+}
+
+.oc-settings-content > section h2 {
+  color: var(--oc-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.oc-terminal-page .sc-pane-toolbar {
+  min-height: 44px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--oc-border);
+  background: var(--oc-surface);
+}
+
+.oc-terminal-page .sc-path {
+  color: var(--oc-text-muted);
+  font-size: 11px;
+}
+
+.oc-terminal-page .sc-pty-state {
+  color: var(--oc-text-faint);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
+.oc-terminal-page .sc-pty-shell {
+  background: color-mix(in srgb, var(--oc-shell) 82%, black);
+}
+
+.oc-terminal-page .sc-pty-host {
+  padding: 10px 12px;
+}
+
+.oc-terminal-page .sc-terminal-notices {
+  margin: 6px 8px 0;
+  border: 1px solid var(--oc-border);
+  border-radius: var(--oc-radius-control);
+  background: var(--oc-raised);
+}
+
+.sc-app.is-runtime-mode .sc-inspector-header,
+.sc-app.is-runtime-mode .sc-inspector-tabs {
+  border-color: var(--oc-border);
+  background: var(--oc-surface);
+}
+
+.sc-app.is-runtime-mode .sc-palette {
+  border: 1px solid var(--oc-border);
+  border-radius: var(--oc-radius-panel);
+  background: var(--oc-raised);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 36%);
+}
+
+.sc-app.is-runtime-mode .sc-palette-search,
+.sc-app.is-runtime-mode .sc-palette-row {
+  border-color: var(--oc-border);
+}
+
+.sc-app.is-runtime-mode .sc-palette-row:hover,
+.sc-app.is-runtime-mode .sc-palette-row.is-active {
+  background: var(--oc-hover);
+}
+
+@media (max-width: 980px) {
+  .sc-app.is-runtime-mode .sc-workbench {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .oc-files-page .files-runtime,
+  .oc-agents-page .agents-runtime,
+  .oc-skills-page .skills-runtime,
+  .oc-mcp-page .mcp-runtime {
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .oc-runtime-page .runtime-split {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(150px, 34%) minmax(0, 1fr);
+  }
+
+  .oc-runtime-page .runtime-sidebar {
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--oc-border);
+  }
+
+  .oc-settings-content {
+    padding-inline: 12px;
+  }
+
+  .oc-settings-header {
+    margin-inline: -12px;
+    padding-inline: 12px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oc-button,
+  .sc-icon-button,
+  .sc-rail-button,
+  .sc-tab {
+    transition: none !important;
+  }
+}

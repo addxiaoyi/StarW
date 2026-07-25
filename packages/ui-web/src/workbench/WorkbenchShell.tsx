@@ -23,7 +23,6 @@ import {
 import {
   InspectorPanel,
   RailNav,
-  SessionSidebar,
   StatusBar,
   TerminalPane,
   TitleBar,
@@ -115,8 +114,6 @@ const WorkbenchShell: Component = () => {
   const [inspectorMode, setInspectorMode] =
     createSignal<InspectorMode>("agents");
   const [inspectorOpen, setInspectorOpen] = createSignal(true);
-  const [sidebarOpen, setSidebarOpen] = createSignal(true);
-  const [sidebarWidth, setSidebarWidth] = createSignal(220);
   const [inspectorWidth, setInspectorWidth] = createSignal(280);
   let stopPanelResize = () => {};
   const [paletteOpen, setPaletteOpen] = createSignal(false);
@@ -171,21 +168,15 @@ const WorkbenchShell: Component = () => {
     return true;
   };
 
-  const beginPanelResize = (
-    panel: "sidebar" | "inspector",
-    event: PointerEvent,
-  ) => {
+  const beginInspectorResize = (event: PointerEvent) => {
     event.preventDefault();
     stopPanelResize();
     const startX = event.clientX;
-    const startWidth = panel === "sidebar" ? sidebarWidth() : inspectorWidth();
-    const direction = panel === "sidebar" ? 1 : -1;
-    const clamp = (value: number) =>
-      Math.min(panel === "sidebar" ? 360 : 440, Math.max(180, value));
+    const startWidth = inspectorWidth();
+    const clamp = (value: number) => Math.min(440, Math.max(180, value));
     const move = (next: PointerEvent) => {
-      const width = clamp(startWidth + (next.clientX - startX) * direction);
-      if (panel === "sidebar") setSidebarWidth(width);
-      else setInspectorWidth(width);
+      const width = clamp(startWidth - (next.clientX - startX));
+      setInspectorWidth(width);
     };
     const stop = () => {
       window.removeEventListener("pointermove", move);
@@ -629,11 +620,12 @@ const WorkbenchShell: Component = () => {
   return (
     <div
       class="sc-app"
-      style={`--sc-sidebar-width: ${sidebarWidth()}px; --sc-inspector-width: ${inspectorWidth()}px;`}
+      data-mode={mode()}
+      style={`--sc-inspector-width: ${inspectorWidth()}px;`}
       classList={{
         "is-inspector-closed": !inspectorVisible(),
-        "is-sidebar-closed": !sidebarOpen(),
         "is-chat-mode": mode() === "chat",
+        "is-runtime-mode": mode() !== "chat",
       }}
     >
       <TitleBar
@@ -642,10 +634,8 @@ const WorkbenchShell: Component = () => {
           mode() === "terminal" ? activeSession().title : MODE_LABELS[mode()]
         }
         inspectorAvailable={inspectorAvailable()}
-        sidebarOpen={sidebarOpen()}
         onOpenPalette={openPalette}
         onToggleInspector={() => setInspectorOpen((value) => !value)}
-        onToggleSidebar={() => setSidebarOpen((value) => !value)}
       />
 
       <div class="sc-workbench">
@@ -655,28 +645,6 @@ const WorkbenchShell: Component = () => {
           onSelect={(nextMode) => void requestModeChange(nextMode)}
           onOpenSettings={() => void requestModeChange("settings")}
         />
-
-        <Show when={mode() !== "chat"}>
-          <SessionSidebar
-            workspaceName={workspaceName()}
-            workspacePath={workspacePath()}
-            runtimePhase={runtime().phase}
-            showSessions={mode() !== "terminal"}
-            sessions={workbench().sessions}
-            activeSessionId={activeSession().id}
-            onSelectSession={selectSession}
-            onAddSession={addSession}
-          />
-          <Show when={sidebarOpen()}>
-            <div
-              class="sc-panel-resizer is-sidebar"
-              role="separator"
-              aria-label="调整侧栏宽度"
-              aria-orientation="vertical"
-              onPointerDown={(event) => beginPanelResize("sidebar", event)}
-            />
-          </Show>
-        </Show>
 
         <section class="sc-content">
           <Show when={mode() === "terminal"}>
@@ -815,7 +783,7 @@ const WorkbenchShell: Component = () => {
             role="separator"
             aria-label="调整检查器宽度"
             aria-orientation="vertical"
-            onPointerDown={(event) => beginPanelResize("inspector", event)}
+            onPointerDown={beginInspectorResize}
           />
           <InspectorPanel
             runtime={runtime()}

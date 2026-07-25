@@ -8,10 +8,8 @@ interface TitleBarProps {
   workspace: string;
   sessionTitle: string;
   inspectorAvailable: boolean;
-  sidebarOpen: boolean;
   onOpenPalette: () => void;
   onToggleInspector: () => void;
-  onToggleSidebar: () => void;
 }
 
 const TitleBar: Component<TitleBarProps> = (props) => (
@@ -22,16 +20,6 @@ const TitleBar: Component<TitleBarProps> = (props) => (
       </span>
       <strong>OpenStar</strong>
     </div>
-
-    <button
-      type="button"
-      class="sc-icon-button sc-sidebar-toggle"
-      aria-label={props.sidebarOpen ? "折叠侧栏" : "展开侧栏"}
-      title={props.sidebarOpen ? "折叠侧栏" : "展开侧栏"}
-      onClick={props.onToggleSidebar}
-    >
-      <Icon name="menu" size="small" />
-    </button>
 
     <div
       class="sc-title-context"

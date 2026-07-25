@@ -3,7 +3,6 @@
  */
 export { default as TitleBar } from "./TitleBar";
 export { default as RailNav } from "./RailNav";
-export { default as SessionSidebar } from "./SessionSidebar";
 export { default as TerminalPane } from "./TerminalPane";
 export { default as InspectorPanel } from "./InspectorPanel";
 export { default as StatusBar } from "./StatusBar";

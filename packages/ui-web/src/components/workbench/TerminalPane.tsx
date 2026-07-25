@@ -283,7 +283,7 @@ const TerminalPane: Component<TerminalPaneProps> = (props) => {
 
   return (
     <section
-      class="sc-terminal-pane"
+      class="oc-terminal-page sc-terminal-pane"
       classList={{ "is-hidden": !isActive() }}
       aria-label={`${props.sessionTitle} interactive terminal`}
     >

@@ -70,7 +70,7 @@ const AgentEditorPanel: Component<AgentEditorPanelProps> = (props) => {
   };
 
   return (
-    <div class="mt-4 rounded-md border border-border bg-card p-3">
+    <div class="oc-agent-editor mt-4 rounded-md border border-border bg-card p-3">
       <div class="flex items-center gap-2">
         <strong class="text-xs">
           {editing() ? "编辑自定义 Agent" : "新建自定义 Agent"}
