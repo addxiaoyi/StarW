@@ -53,6 +53,7 @@ import {
   type SessionHealth,
   type TerminalSession,
 } from "./model";
+import { filterPaletteActions, groupPaletteActions } from "./palette";
 
 const NAV_ITEMS = [
   { id: "terminal" as const, label: "Terminal", icon: "terminal" },
@@ -119,6 +120,11 @@ const WorkbenchShell: Component = () => {
   const [paletteOpen, setPaletteOpen] = createSignal(false);
   const [paletteQuery, setPaletteQuery] = createSignal("");
   const [paletteIndex, setPaletteIndex] = createSignal(0);
+  const [runtimeTarget, setRuntimeTarget] = createSignal<{
+    mode: WorkbenchMode;
+    value: string;
+    nonce: number;
+  } | null>(null);
   let paletteSearch!: HTMLInputElement;
   let paletteDialog!: HTMLElement;
   let paletteReturnFocus: HTMLElement | null = null;
@@ -166,6 +172,18 @@ const WorkbenchShell: Component = () => {
     }
     setMode(nextMode);
     return true;
+  };
+
+  const navigateTo = (nextMode: WorkbenchMode, value = "") => {
+    if (!requestModeChange(nextMode)) return;
+    setRuntimeTarget(
+      value ? { mode: nextMode, value, nonce: Date.now() } : null,
+    );
+  };
+
+  const focusTargetFor = (targetMode: WorkbenchMode) => {
+    const target = runtimeTarget();
+    return target?.mode === targetMode ? target : undefined;
   };
 
   const beginInspectorResize = (event: PointerEvent) => {
@@ -399,48 +417,185 @@ const WorkbenchShell: Component = () => {
     );
   };
 
-  const actions = createMemo<PaletteAction[]>(() => [
-    {
-      id: "new-terminal",
-      label: "New terminal",
-      detail: "Create a terminal session",
-      icon: "plus-small",
-      run: addSession,
-    },
-    ...NAV_ITEMS.map((item) => ({
-      id: `show-${item.id}`,
-      label: item.label,
-      detail: `Open ${item.label}`,
-      icon: item.icon,
-      run: () => void requestModeChange(item.id),
-    })),
-    {
-      id: "show-settings",
-      label: "Settings",
-      detail: "Configure providers, workspace, Swarm and MCP",
-      icon: "settings-gear",
-      run: () => void requestModeChange("settings"),
-    },
-    ...(inspectorAvailable()
-      ? [
-          {
-            id: "toggle-inspector",
-            label: "Toggle inspector",
-            detail: "Show or hide runtime details",
-            icon: "layout-left",
-            run: () => setInspectorOpen((value) => !value),
-          },
-        ]
-      : []),
-  ]);
+  const actions = createMemo<PaletteAction[]>(() => {
+    const currentActions: PaletteAction[] =
+      mode() === "terminal"
+        ? [
+            ...(activeBlocks().length
+              ? [
+                  {
+                    id: "clear-terminal",
+                    label: "清空终端输出",
+                    detail: activeSession().title,
+                    icon: "reset",
+                    category: "当前视图",
+                    keywords: ["clear", "terminal", "output", "清空"],
+                    run: clearBlocks,
+                  } satisfies PaletteAction,
+                ]
+              : []),
+            ...(commandRunning()
+              ? [
+                  {
+                    id: "stop-terminal-command",
+                    label: "停止当前命令",
+                    detail: activeSession().title,
+                    icon: "stop",
+                    category: "当前视图",
+                    keywords: ["stop", "cancel", "terminal", "停止"],
+                    run: () => void cancelCommandForSession(activeSession().id),
+                  } satisfies PaletteAction,
+                ]
+              : []),
+            {
+              id: "toggle-inspector",
+              label: inspectorOpen() ? "隐藏 Inspector" : "显示 Inspector",
+              detail: "切换终端运行时详情",
+              icon: "layout-left",
+              category: "当前视图",
+              keywords: ["panel", "sidebar", "context", "检查器"],
+              run: () => setInspectorOpen((value) => !value),
+            },
+          ]
+        : [];
 
-  const filteredActions = createMemo(() => {
-    const query = paletteQuery().trim().toLowerCase();
-    if (!query) return actions();
-    return actions().filter((action) =>
-      `${action.label} ${action.detail}`.toLowerCase().includes(query),
+    const sessionActions: PaletteAction[] = [
+      {
+        id: "new-terminal",
+        label: "新建终端",
+        detail: "在当前工作区创建一个终端会话",
+        icon: "plus-small",
+        category: "会话",
+        keywords: ["terminal", "shell", "终端", "会话"],
+        keybind: "Ctrl/⌘ N",
+        run: addSession,
+      },
+    ];
+
+    const workspaceActions: PaletteAction[] = [
+      {
+        id: "refresh-runtime",
+        label: "刷新运行时",
+        detail: "重新读取工作区、Agent、Skill 与 MCP 状态",
+        icon: "reset",
+        category: "工作区",
+        keywords: ["reload", "sync", "runtime", "状态", "刷新"],
+        run: () => void loadRuntime(),
+      },
+    ];
+
+    const navigationActions = NAV_ITEMS.map(
+      (item, index) =>
+        ({
+          id: `show-${item.id}`,
+          label: item.label,
+          detail: `打开 ${MODE_LABELS[item.id]}`,
+          icon: item.icon,
+          category: "导航",
+          keywords: [item.id, item.label, MODE_LABELS[item.id], "页面", "视图"],
+          keybind: `Ctrl/⌘ ${index + 1}`,
+          run: () => navigateTo(item.id),
+        }) satisfies PaletteAction,
     );
+
+    const resourceActions: PaletteAction[] = [
+      ...runtime().agents.map((agent) => ({
+        id: `agent:${encodeURIComponent(agent.name)}`,
+        label: agent.name,
+        detail:
+          agent.description || `${agent.status} · ${agent.tasks} active tasks`,
+        icon: "subagent",
+        category: "Agents",
+        keywords: ["agent", "代理", agent.role || "", agent.status],
+        run: () => navigateTo("agents", agent.name),
+      })),
+      ...runtime().skills.map((skill) => ({
+        id: `skill:${encodeURIComponent(skill.name)}`,
+        label: skill.name,
+        detail: skill.description || "打开 Skill 参数与执行界面",
+        icon: "zap",
+        category: "Skills",
+        keywords: ["skill", "tool", "技能", skill.category || ""],
+        run: () => navigateTo("skills", skill.name),
+      })),
+      ...(runtime().mcp?.servers ?? []).map((server) => ({
+        id: `mcp:${encodeURIComponent(server.id || server.name)}`,
+        label: server.name,
+        detail: `${server.status}${server.toolCount === undefined ? "" : ` · ${server.toolCount} tools`}`,
+        icon: "providers",
+        category: "MCP",
+        keywords: ["mcp", "server", "工具", server.status],
+        run: () => navigateTo("mcp", server.id || server.name),
+      })),
+    ];
+
+    const settingsActions: PaletteAction[] = [
+      {
+        id: "show-settings",
+        label: "Settings",
+        detail: "打开桌面偏好设置",
+        icon: "settings-gear",
+        category: "导航",
+        keywords: ["preferences", "配置", "偏好"],
+        keybind: "Ctrl/⌘ ,",
+        run: () => navigateTo("settings"),
+      },
+      {
+        id: "settings-general",
+        label: "工作区与外观",
+        detail: "定位工作区目录和主题配置",
+        icon: "folder",
+        category: "设置",
+        keywords: ["workspace", "theme", "工作区", "主题", "外观"],
+        run: () => navigateTo("settings", "settings-general"),
+      },
+      {
+        id: "settings-providers",
+        label: "模型 Provider",
+        detail: "定位模型、Base URL 与 API Key",
+        icon: "providers",
+        category: "设置",
+        keywords: ["model", "provider", "api key", "模型", "密钥"],
+        run: () => navigateTo("settings", "settings-providers"),
+      },
+      {
+        id: "settings-swarm",
+        label: "Swarm",
+        detail: "定位 Worker、并发与超时配置",
+        icon: "subagent",
+        category: "设置",
+        keywords: ["worker", "concurrency", "timeout", "并发", "编排"],
+        run: () => navigateTo("settings", "settings-swarm"),
+      },
+      {
+        id: "settings-mcp",
+        label: "MCP Servers",
+        detail: "定位 MCP stdio Server JSON 配置",
+        icon: "server",
+        category: "设置",
+        keywords: ["mcp", "stdio", "server", "连接"],
+        run: () => navigateTo("settings", "settings-mcp"),
+      },
+    ];
+
+    return [
+      ...currentActions,
+      ...sessionActions,
+      ...workspaceActions,
+      ...navigationActions,
+      ...resourceActions,
+      ...settingsActions,
+    ];
   });
+
+  const filteredActions = createMemo(() =>
+    filterPaletteActions(actions(), paletteQuery()),
+  );
+  const groupedActions = createMemo(() =>
+    groupPaletteActions(filteredActions()),
+  );
+  const paletteActionIndex = (action: PaletteAction) =>
+    filteredActions().indexOf(action);
 
   const openPalette = () => {
     paletteReturnFocus =
@@ -519,15 +674,41 @@ const WorkbenchShell: Component = () => {
   };
 
   const handleKeydown = (event: KeyboardEvent) => {
-    if (
-      (event.ctrlKey || event.metaKey) &&
-      event.key.toLowerCase() === "k" &&
-      !event.isComposing &&
-      !editableTarget(event.target)
-    ) {
+    if (event.isComposing) return;
+    const modifier = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+    const target = event.target instanceof HTMLElement ? event.target : null;
+    const terminalTarget = Boolean(target?.closest(".xterm"));
+    const paletteShortcut =
+      modifier &&
+      ((key === "k" && !terminalTarget) || (event.shiftKey && key === "p"));
+
+    if (paletteShortcut) {
       event.preventDefault();
       if (paletteOpen()) closePalette();
       else openPalette();
+      return;
+    }
+
+    if (paletteOpen() || !modifier || editableTarget(event.target)) return;
+
+    if (!event.shiftKey && key === "n") {
+      event.preventDefault();
+      addSession();
+      return;
+    }
+
+    if (!event.shiftKey && event.key === ",") {
+      event.preventDefault();
+      navigateTo("settings");
+      return;
+    }
+
+    if (!event.shiftKey && /^[1-7]$/.test(event.key)) {
+      const item = NAV_ITEMS[Number(event.key) - 1];
+      if (!item) return;
+      event.preventDefault();
+      navigateTo(item.id);
     }
   };
 
@@ -755,19 +936,26 @@ const WorkbenchShell: Component = () => {
                   />
                 </Match>
                 <Match when={mode() === "agents"}>
-                  <AgentsRuntimeView onRuntimeChanged={loadRuntime} />
+                  <AgentsRuntimeView
+                    focusTarget={focusTargetFor("agents")}
+                    onRuntimeChanged={loadRuntime}
+                  />
                 </Match>
                 <Match when={mode() === "skills"}>
-                  <SkillsRuntimeView />
+                  <SkillsRuntimeView focusTarget={focusTargetFor("skills")} />
                 </Match>
                 <Match when={mode() === "mcp"}>
-                  <McpRuntimeView onRuntimeChanged={loadRuntime} />
+                  <McpRuntimeView
+                    focusTarget={focusTargetFor("mcp")}
+                    onRuntimeChanged={loadRuntime}
+                  />
                 </Match>
                 <Match when={mode() === "browser"}>
                   <BrowserRuntimeView />
                 </Match>
                 <Match when={mode() === "settings"}>
                   <SettingsRuntimeView
+                    focusTarget={focusTargetFor("settings")}
                     onRuntimeChanged={loadRuntime}
                     onDirtyChange={setSettingsDirty}
                   />
@@ -819,6 +1007,11 @@ const WorkbenchShell: Component = () => {
             aria-label="Command palette"
             onKeyDown={handlePaletteKeydown}
           >
+            <div class="sc-palette-context">
+              <span>Command palette</span>
+              <strong>{MODE_LABELS[mode()]}</strong>
+              <kbd>Ctrl/⌘ K</kbd>
+            </div>
             <label class="sc-palette-search">
               <Icon name="magnifying-glass" size="normal" />
               <input
@@ -836,9 +1029,12 @@ const WorkbenchShell: Component = () => {
                   setPaletteQuery(event.currentTarget.value);
                   setPaletteIndex(0);
                 }}
-                placeholder="Search commands and views"
-                autofocus
+                placeholder="搜索命令、页面、Agent、Skill 或 MCP"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck={false}
               />
+              <kbd>ESC</kbd>
             </label>
             <div
               id="command-palette-results"
@@ -848,32 +1044,78 @@ const WorkbenchShell: Component = () => {
               <Show
                 when={filteredActions().length > 0}
                 fallback={
-                  <div class="sc-palette-empty">No matching command</div>
+                  <div class="sc-palette-empty">
+                    <strong>没有匹配项</strong>
+                    <span>
+                      尝试自由关键词，或使用 @ Agent、/ Skill、: Settings。
+                    </span>
+                  </div>
                 }
               >
-                {filteredActions().map((action, index) => (
-                  <button
-                    id={`command-palette-${action.id}`}
-                    type="button"
-                    class="sc-palette-row"
-                    classList={{ selected: index === paletteIndex() }}
-                    role="option"
-                    aria-selected={index === paletteIndex()}
-                    onMouseEnter={() => setPaletteIndex(index)}
-                    onClick={() => runPaletteAction(index)}
-                  >
-                    <span class="sc-palette-icon">
-                      <Icon name={action.icon as never} size="normal" />
-                    </span>
-                    <span>
-                      <strong>{action.label}</strong>
-                      <small>{action.detail}</small>
-                    </span>
-                    <Icon name="chevron-right" size="small" />
-                  </button>
-                ))}
+                <For each={groupedActions()}>
+                  {(group) => (
+                    <section class="sc-palette-group">
+                      <div class="sc-palette-group-label">
+                        <span>{group.category}</span>
+                        <small>{group.actions.length}</small>
+                      </div>
+                      <For each={group.actions}>
+                        {(action) => {
+                          const index = () => paletteActionIndex(action);
+                          return (
+                            <button
+                              id={`command-palette-${action.id}`}
+                              type="button"
+                              class="sc-palette-row"
+                              classList={{
+                                selected: index() === paletteIndex(),
+                              }}
+                              role="option"
+                              aria-selected={index() === paletteIndex()}
+                              onMouseEnter={() => setPaletteIndex(index())}
+                              onClick={() => runPaletteAction(index())}
+                            >
+                              <span class="sc-palette-icon">
+                                <Icon
+                                  name={action.icon as never}
+                                  size="normal"
+                                />
+                              </span>
+                              <span class="sc-palette-copy">
+                                <strong>{action.label}</strong>
+                                <small>{action.detail}</small>
+                              </span>
+                              <Show
+                                when={action.keybind}
+                                fallback={
+                                  <Icon name="chevron-right" size="small" />
+                                }
+                              >
+                                <kbd class="sc-palette-keybind">
+                                  {action.keybind}
+                                </kbd>
+                              </Show>
+                            </button>
+                          );
+                        }}
+                      </For>
+                    </section>
+                  )}
+                </For>
               </Show>
             </div>
+            <footer class="sc-palette-footer">
+              <span>
+                <kbd>↑</kbd>
+                <kbd>↓</kbd> 导航
+              </span>
+              <span>
+                <kbd>↵</kbd> 执行
+              </span>
+              <span class="sc-palette-scopes">
+                @ Agents · / Skills · : Settings
+              </span>
+            </footer>
           </section>
         </div>
       </Show>

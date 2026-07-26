@@ -99,6 +99,9 @@ export interface PaletteAction {
   label: string;
   detail: string;
   icon: string;
+  category: string;
+  keywords?: string[];
+  keybind?: string;
   run: () => void;
 }
 

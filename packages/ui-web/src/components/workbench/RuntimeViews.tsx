@@ -54,6 +54,10 @@ const ErrorNotice: Component<{ message: string }> = (props) => (
 );
 
 interface RuntimeViewProps {
+  focusTarget?: {
+    value: string;
+    nonce: number;
+  };
   onRuntimeChanged?: RuntimeChanged;
   onDirtyChange?: (dirty: boolean) => void;
 }
@@ -724,7 +728,7 @@ type AgentConfirmAction =
   | { kind: "delete-session"; sessionId: string }
   | { kind: "rollback-change"; change: ChangeItem };
 
-export const AgentsRuntimeView: Component<RuntimeViewProps> = () => {
+export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
   const [agents, setAgents] = createSignal<AgentItem[]>([]);
   const [sessions, setSessions] = createSignal<AgentSessionItem[]>([]);
   const [tasks, setTasks] = createSignal<SwarmTask[]>([]);
@@ -751,6 +755,18 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = () => {
   let refreshTimer: ReturnType<typeof setTimeout> | undefined;
   let clockTimer: ReturnType<typeof setInterval> | undefined;
   let refreshSequence = 0;
+
+  createEffect(() => {
+    const target = props.focusTarget;
+    if (!target) return;
+    const agent = agents().find(
+      (item) =>
+        item.name.toLocaleLowerCase() === target.value.toLocaleLowerCase(),
+    );
+    if (!agent || selectedAgent() === agent.name) return;
+    setSelectedAgent(agent.name);
+    setEditorAgentName("");
+  });
 
   const refresh = async () => {
     const requestId = ++refreshSequence;
@@ -1014,6 +1030,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = () => {
             {(agent) => (
               <button
                 class="oc-agent-row"
+                data-agent-name={agent.name}
                 classList={{
                   "border-ring bg-muted": selectedAgent() === agent.name,
                 }}
@@ -1525,7 +1542,7 @@ interface SkillItem {
   };
 }
 
-export const SkillsRuntimeView: Component = () => {
+export const SkillsRuntimeView: Component<RuntimeViewProps> = (props) => {
   const [skills, setSkills] = createSignal<SkillItem[]>([]);
   const [selected, setSelected] = createSignal("");
   const [fieldValues, setFieldValues] = createSignal<
@@ -1562,6 +1579,16 @@ export const SkillsRuntimeView: Component = () => {
     setResult("");
     setError("");
   };
+
+  createEffect(() => {
+    const target = props.focusTarget;
+    if (!target) return;
+    const skill = skills().find(
+      (item) =>
+        item.name.toLocaleLowerCase() === target.value.toLocaleLowerCase(),
+    );
+    if (skill && selected() !== skill.name) selectSkill(skill);
+  });
 
   const load = async () => {
     setLoading(true);
@@ -1672,6 +1699,7 @@ export const SkillsRuntimeView: Component = () => {
               {(skill) => (
                 <button
                   class="oc-skill-row"
+                  data-skill-name={skill.name}
                   classList={{
                     "border-ring bg-muted": selected() === skill.name,
                   }}
@@ -1911,6 +1939,33 @@ export const McpRuntimeView: Component<RuntimeViewProps> = (props) => {
     }
   };
 
+  createEffect(() => {
+    const target = props.focusTarget;
+    if (!target) return;
+    const normalized = target.value.toLocaleLowerCase();
+    const server = servers().find(
+      (item) =>
+        item.id.toLocaleLowerCase() === normalized ||
+        item.name.toLocaleLowerCase() === normalized,
+    );
+    if (!server) return;
+    const firstTool = String(server.tools[0]?.name || "");
+    if (
+      firstTool &&
+      (selectedServer() !== server.id || selectedTool() !== firstTool)
+    ) {
+      setSelectedServer(server.id);
+      setSelectedTool(firstTool);
+      setArgumentsText("{}");
+      setResult("");
+    }
+    requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(`[data-mcp-server-id="${server.id}"]`)
+        ?.scrollIntoView({ block: "nearest" });
+    });
+  });
+
   const connect = async (serverId: string) => {
     setBusy(true);
     try {
@@ -2010,7 +2065,7 @@ export const McpRuntimeView: Component<RuntimeViewProps> = (props) => {
           >
             <For each={servers()}>
               {(server) => (
-                <article class="oc-mcp-server">
+                <article class="oc-mcp-server" data-mcp-server-id={server.id}>
                   <header class="flex items-center gap-2">
                     <strong class="min-w-0 flex-1 truncate">
                       {server.name}
@@ -2256,6 +2311,16 @@ interface PublicConfig {
 
 const providerIds = ["openai", "anthropic", "kimi"] as const;
 
+const SETTINGS_SEARCH_INDEX = {
+  "settings-general": "工作区 外观 workspace theme 目录 主题",
+  "settings-providers":
+    "模型 provider api key base url openai anthropic kimi 密钥",
+  "settings-swarm": "swarm worker concurrency timeout 并发 编排 超时",
+  "settings-mcp": "mcp stdio server json 连接 工具",
+} as const;
+
+type SettingsSectionId = keyof typeof SETTINGS_SEARCH_INDEX;
+
 export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
   const [config, setConfig] = createSignal<PublicConfig | null>(null);
   const [baselineConfig, setBaselineConfig] = createSignal<PublicConfig | null>(
@@ -2267,6 +2332,22 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
   const [savingMcp, setSavingMcp] = createSignal(false);
   const [error, setError] = createSignal("");
   const [saved, setSaved] = createSignal(false);
+  const [settingsQuery, setSettingsQuery] = createSignal("");
+
+  const settingsSectionVisible = (id: SettingsSectionId) => {
+    const tokens = settingsQuery()
+      .trim()
+      .toLocaleLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!tokens.length) return true;
+    const haystack = `${id} ${SETTINGS_SEARCH_INDEX[id]}`.toLocaleLowerCase();
+    return tokens.every((token) => haystack.includes(token));
+  };
+  const visibleSettingsCount = () =>
+    (Object.keys(SETTINGS_SEARCH_INDEX) as SettingsSectionId[]).filter(
+      settingsSectionVisible,
+    ).length;
 
   const mainDirty = () =>
     JSON.stringify(config()) !== JSON.stringify(baselineConfig());
@@ -2427,6 +2508,20 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
     if (hasChanges) setSaved(false);
   });
 
+  createEffect(() => {
+    const target = props.focusTarget;
+    if (!target || !config()) return;
+    if (!(target.value in SETTINGS_SEARCH_INDEX)) return;
+    setSettingsQuery("");
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        document
+          .getElementById(target.value)
+          ?.scrollIntoView({ block: "start" }),
+      ),
+    );
+  });
+
   onMount(() => {
     void load();
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -2445,11 +2540,52 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
             <strong>Settings</strong>
             <small>运行时、模型、编排与扩展连接</small>
           </div>
+          <label class="oc-settings-search">
+            <Icon name="magnifying-glass" size="small" />
+            <input
+              value={settingsQuery()}
+              onInput={(event) => setSettingsQuery(event.currentTarget.value)}
+              placeholder="搜索设置"
+              aria-label="搜索设置"
+              autocomplete="off"
+              spellcheck={false}
+            />
+            <small>{visibleSettingsCount()}</small>
+          </label>
           <nav>
-            <a href="#settings-general">工作区与外观</a>
-            <a href="#settings-providers">模型 Provider</a>
-            <a href="#settings-swarm">Swarm</a>
-            <a href="#settings-mcp">MCP Servers</a>
+            <a
+              href="#settings-general"
+              classList={{
+                "is-filtered-out": !settingsSectionVisible("settings-general"),
+              }}
+            >
+              工作区与外观
+            </a>
+            <a
+              href="#settings-providers"
+              classList={{
+                "is-filtered-out":
+                  !settingsSectionVisible("settings-providers"),
+              }}
+            >
+              模型 Provider
+            </a>
+            <a
+              href="#settings-swarm"
+              classList={{
+                "is-filtered-out": !settingsSectionVisible("settings-swarm"),
+              }}
+            >
+              Swarm
+            </a>
+            <a
+              href="#settings-mcp"
+              classList={{
+                "is-filtered-out": !settingsSectionVisible("settings-mcp"),
+              }}
+            >
+              MCP Servers
+            </a>
           </nav>
           <div class="oc-settings-privacy">
             API Key 仅写入本地加密存储，不会返回 renderer。
@@ -2490,10 +2626,23 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                 配置已保存并重新加载运行时。
               </div>
             </Show>
+            <Show when={config() && visibleSettingsCount() === 0}>
+              <EmptyState
+                title="没有匹配的设置"
+                detail="尝试 workspace、provider、swarm、MCP 或中文关键词。"
+              />
+            </Show>
             <Show when={config()}>
               {(value) => (
                 <>
-                  <section id="settings-general" class="oc-settings-section">
+                  <section
+                    id="settings-general"
+                    class="oc-settings-section"
+                    classList={{
+                      "is-filtered-out":
+                        !settingsSectionVisible("settings-general"),
+                    }}
+                  >
                     <h2 class="font-semibold">工作区与外观</h2>
                     <label class="mt-3 block text-sm">
                       工作区
@@ -2536,7 +2685,14 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                     </label>
                   </section>
 
-                  <section id="settings-providers" class="oc-settings-section">
+                  <section
+                    id="settings-providers"
+                    class="oc-settings-section"
+                    classList={{
+                      "is-filtered-out":
+                        !settingsSectionVisible("settings-providers"),
+                    }}
+                  >
                     <h2 class="font-semibold">模型 Provider</h2>
                     <label class="mt-3 block text-sm">
                       默认 Provider
@@ -2655,7 +2811,14 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                     </For>
                   </section>
 
-                  <section id="settings-swarm" class="oc-settings-section">
+                  <section
+                    id="settings-swarm"
+                    class="oc-settings-section"
+                    classList={{
+                      "is-filtered-out":
+                        !settingsSectionVisible("settings-swarm"),
+                    }}
+                  >
                     <h2 class="font-semibold">Swarm</h2>
                     <div class="mt-3 grid gap-3 md:grid-cols-3">
                       <label class="text-sm">
@@ -2721,7 +2884,14 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                     </div>
                   </section>
 
-                  <section id="settings-mcp" class="oc-settings-section">
+                  <section
+                    id="settings-mcp"
+                    class="oc-settings-section"
+                    classList={{
+                      "is-filtered-out":
+                        !settingsSectionVisible("settings-mcp"),
+                    }}
+                  >
                     <div class="flex flex-wrap items-center gap-2">
                       <div>
                         <h2 class="font-semibold">MCP stdio Servers</h2>

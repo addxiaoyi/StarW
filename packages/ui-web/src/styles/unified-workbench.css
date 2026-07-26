@@ -1409,3 +1409,242 @@ body {
     scroll-behavior: auto;
   }
 }
+
+/* Command-first interaction layer. */
+.sc-palette {
+  width: min(680px, calc(100vw - 32px));
+  max-height: min(720px, calc(100vh - 80px));
+  overflow: hidden;
+}
+
+.sc-palette-context {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--oc-border);
+  background: color-mix(in srgb, var(--oc-shell) 42%, var(--oc-surface));
+  color: var(--oc-text-faint);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sc-palette-context strong {
+  color: var(--oc-text-muted);
+  font-weight: 560;
+}
+
+.sc-palette-context kbd {
+  margin-left: auto;
+}
+
+.sc-palette-search {
+  min-height: 52px;
+  padding-inline: 14px;
+}
+
+.sc-palette-search > kbd,
+.sc-palette-context kbd,
+.sc-palette-keybind,
+.sc-palette-footer kbd {
+  border: 1px solid var(--oc-border);
+  border-radius: 5px;
+  background: var(--oc-hover);
+  color: var(--oc-text-faint);
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 520;
+  line-height: 18px;
+}
+
+.sc-palette-search > kbd,
+.sc-palette-context kbd,
+.sc-palette-keybind {
+  min-width: 28px;
+  padding: 0 5px;
+  text-align: center;
+}
+
+.sc-palette-results {
+  max-height: min(560px, calc(100vh - 210px));
+  padding: 5px;
+}
+
+.sc-palette-group + .sc-palette-group {
+  margin-top: 3px;
+}
+
+.sc-palette-group-label {
+  display: flex;
+  height: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  color: var(--oc-text-faint);
+  font-size: 9px;
+  font-weight: 560;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.sc-palette-group-label small {
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.sc-palette-row {
+  min-height: 42px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+}
+
+.sc-palette-row:hover,
+.sc-palette-row.selected {
+  background: var(--oc-hover);
+  box-shadow: none;
+}
+
+.sc-palette-row.selected {
+  box-shadow: inset 2px 0 0 var(--oc-accent);
+}
+
+.sc-palette-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--oc-active) 72%, transparent);
+  color: var(--oc-text-muted);
+}
+
+.sc-palette-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.sc-palette-copy strong,
+.sc-palette-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-palette-copy strong {
+  color: var(--oc-text);
+  font-size: 12px;
+  font-weight: 540;
+  line-height: 16px;
+}
+
+.sc-palette-copy small {
+  margin-top: 1px;
+  color: var(--oc-text-muted);
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.sc-palette-footer {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  border-top: 1px solid var(--oc-border);
+  background: color-mix(in srgb, var(--oc-shell) 36%, var(--oc-surface));
+  color: var(--oc-text-faint);
+  font-size: 10px;
+}
+
+.sc-palette-footer span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.sc-palette-footer kbd {
+  min-width: 18px;
+  padding: 0 3px;
+  text-align: center;
+}
+
+.sc-palette-scopes {
+  margin-left: auto;
+}
+
+.sc-palette-empty {
+  display: flex;
+  min-height: 140px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--oc-text-muted);
+  text-align: center;
+}
+
+.sc-palette-empty strong {
+  color: var(--oc-text);
+  font-size: 13px;
+  font-weight: 560;
+}
+
+.sc-palette-empty span {
+  font-size: 11px;
+}
+
+.oc-settings-search {
+  display: flex;
+  height: 32px;
+  align-items: center;
+  gap: 6px;
+  margin: 0 3px 10px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: var(--oc-hover);
+  color: var(--oc-text-faint);
+}
+
+.oc-settings-search:focus-within {
+  border-color: var(--oc-border-strong);
+  background: var(--oc-active);
+}
+
+.oc-settings-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--oc-text);
+  font-size: 11px;
+  box-shadow: none;
+}
+
+.oc-settings-search small {
+  min-width: 18px;
+  color: var(--oc-text-faint);
+  font-size: 9px;
+  text-align: right;
+}
+
+.oc-settings-page .is-filtered-out {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .sc-palette {
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 24px);
+  }
+
+  .sc-palette-scopes {
+    display: none !important;
+  }
+}
