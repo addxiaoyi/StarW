@@ -11,6 +11,16 @@ import {
 import { Icon, type IconName } from "../Icon";
 import MarkdownRenderer from "../MarkdownRenderer";
 import { desktopRequest, subscribeDesktopEvent } from "../../services/desktop";
+import ChatComposer from "./ChatComposer";
+import {
+  type AgentMode,
+  type ComposerCommandId,
+  type ComposerFileContext,
+  type ParsedComposerPrompt,
+  buildComposerPrompt,
+  findComposerCommand,
+  parseComposerPrompt,
+} from "./chat-composer-model";
 
 interface ChatSession {
   id: string;
@@ -38,7 +48,6 @@ interface ChatRuntimeViewProps {
   onSelectMode?: (mode: ChatToolMode) => void;
 }
 
-type AgentMode = "build" | "plan";
 type ChatView = "home" | "session";
 
 const TOOL_LINKS: Array<{ id: ChatToolMode; label: string; icon: IconName }> = [
@@ -50,9 +59,6 @@ const TOOL_LINKS: Array<{ id: ChatToolMode; label: string; icon: IconName }> = [
   { id: "browser", label: "浏览器", icon: "window-cursor" },
   { id: "settings", label: "设置", icon: "settings-gear" },
 ];
-
-const PLAN_MODE_PREFIX =
-  "[OpenStar Plan Mode]\nAnalyze the request, inspect relevant context, and produce a concrete implementation plan before making changes. Do not modify files or execute destructive actions unless the user explicitly switches to Build mode.\n\n";
 
 function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -111,12 +117,13 @@ function usageLabel(key: string): string {
 
 const numberFormat = new Intl.NumberFormat("zh-CN");
 
-const textOf = (message: ChatMessage) => {
-  const text = message.content.map((item) => item.text || "").join("\n");
-  return text.startsWith(PLAN_MODE_PREFIX)
-    ? text.slice(PLAN_MODE_PREFIX.length)
-    : text;
-};
+const rawTextOf = (message: ChatMessage) =>
+  message.content.map((item) => item.text || "").join("\n");
+
+const promptOf = (message: ChatMessage) =>
+  parseComposerPrompt(rawTextOf(message));
+
+const textOf = (message: ChatMessage) => promptOf(message).text;
 
 const Notice: Component<{ message: string }> = (props) => (
   <div class="oc-chat-notice" role="alert" aria-live="assertive">
@@ -125,12 +132,49 @@ const Notice: Component<{ message: string }> = (props) => (
   </div>
 );
 
+const PromptContextChips: Component<{
+  prompt: ParsedComposerPrompt;
+  compact?: boolean;
+}> = (props) => (
+  <Show when={props.prompt.command || props.prompt.files.length}>
+    <div
+      class="oc-v2-message-context"
+      classList={{ "is-compact": Boolean(props.compact) }}
+    >
+      <Show when={findComposerCommand(props.prompt.command)}>
+        {(command) => (
+          <span class="oc-v2-message-context-chip is-command">
+            <Icon name="sparkle-2" size="small" />/{command().id}
+          </span>
+        )}
+      </Show>
+      <For each={props.prompt.files}>
+        {(file) => (
+          <span class="oc-v2-message-context-chip" title={file.path}>
+            <Icon name="file" size="small" />
+            {file.name}
+          </span>
+        )}
+      </For>
+    </div>
+  </Show>
+);
+
 const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
   const [sessions, setSessions] = createSignal<ChatSession[]>([]);
   const [activeId, setActiveId] = createSignal("");
   const [messages, setMessages] = createSignal<ChatMessage[]>([]);
   const [input, setInput] = createSignal("");
   const [agentMode, setAgentMode] = createSignal<AgentMode>("build");
+  const [composerFiles, setComposerFiles] = createSignal<ComposerFileContext[]>(
+    [],
+  );
+  const [composerCommand, setComposerCommand] = createSignal<
+    ComposerCommandId | undefined
+  >();
+  const [lastCommand, setLastCommand] = createSignal<
+    ComposerCommandId | undefined
+  >();
   const [busySessionId, setBusySessionId] = createSignal("");
   const [error, setError] = createSignal("");
   const [providerLabel, setProviderLabel] = createSignal("");
@@ -180,6 +224,14 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
       .map((id) => sessions().find((session) => session.id === id))
       .filter((session): session is ChatSession => Boolean(session)),
   );
+  const sessionPromptContext = createMemo<ParsedComposerPrompt>(() => ({
+    text: "",
+    mode: agentMode(),
+    files: composerFiles(),
+    ...(composerCommand() || lastCommand()
+      ? { command: (composerCommand() || lastCommand())! }
+      : {}),
+  }));
 
   const scrollToBottom = () => {
     if (messageList && followBottom)
@@ -290,6 +342,16 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
       });
     } else {
       setMessages(result.messages);
+      const latestUser = [...result.messages]
+        .reverse()
+        .find((message) => message.role === "user");
+      if (latestUser) {
+        const parsed = promptOf(latestUser);
+        setComposerFiles(parsed.files);
+        setComposerCommand(undefined);
+        setLastCommand(parsed.command);
+        setAgentMode(parsed.mode);
+      }
     }
     setHasMore(result.hasMore);
     setPageStart(result.start);
@@ -310,7 +372,10 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     }
   };
 
-  const createSession = async (name = "New Task") => {
+  const createSession = async (
+    name = "New Task",
+    options: { preserveComposer?: boolean } = {},
+  ) => {
     const result = await desktopRequest<{ session: ChatSession }>(
       "sessions/create",
       { name },
@@ -327,6 +392,13 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     setView("session");
     setMessages([]);
     setStreamingText("");
+    if (!options.preserveComposer) {
+      setInput("");
+      setComposerFiles([]);
+      setComposerCommand(undefined);
+      setLastCommand(undefined);
+      setAgentMode("build");
+    }
     requestAnimationFrame(() => composer?.focus());
     return result.session;
   };
@@ -336,6 +408,10 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     setActiveId(sessionId);
     setStreamingText("");
     setError("");
+    setInput("");
+    setComposerFiles([]);
+    setComposerCommand(undefined);
+    setLastCommand(undefined);
     followBottom = true;
     void loadMessages(sessionId).catch((cause) => setError(errorText(cause)));
   };
@@ -366,27 +442,41 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     setActiveId("");
     setMessages([]);
     setStreamingText("");
+    setInput("");
+    setComposerFiles([]);
+    setComposerCommand(undefined);
+    setLastCommand(undefined);
+    setAgentMode("build");
     setView("home");
   };
 
-  const sendMessage = async (override?: string) => {
-    const text = (override ?? input()).trim();
+  const sendMessage = async (override?: ParsedComposerPrompt) => {
+    const text = (override?.text ?? input()).trim();
     if (!text || busySessionId()) return;
-    const promptText =
-      agentMode() === "plan" ? `${PLAN_MODE_PREFIX}${text}` : text;
+    const mode = override?.mode ?? agentMode();
+    const files = override?.files ?? composerFiles();
+    const command = override?.command ?? composerCommand();
+    const promptText = buildComposerPrompt(text, mode, { files, command });
     let sessionId = activeId();
     setError("");
     setStreamingText("");
     try {
-      if (!sessionId) sessionId = (await createSession(text.slice(0, 48))).id;
+      if (!sessionId)
+        sessionId = (
+          await createSession(text.slice(0, 48), { preserveComposer: true })
+        ).id;
       setBusySessionId(sessionId);
-      if (!override) setInput("");
+      setLastCommand(command);
+      if (!override) {
+        setInput("");
+        setComposerCommand(undefined);
+      }
       setMessages((current) => [
         ...current,
         {
           id: `optimistic-${Date.now()}`,
           role: "user",
-          content: [{ type: "text", text }],
+          content: [{ type: "text", text: promptText }],
           created_at: Date.now(),
           optimistic: true,
         },
@@ -406,7 +496,12 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
       await loadSessions();
     } catch (cause) {
       setMessages((current) => current.filter((item) => !item.optimistic));
-      setInput((current) => current || text);
+      if (!override) {
+        setInput((current) => current || text);
+        setComposerFiles(files);
+        setComposerCommand(command);
+        setAgentMode(mode);
+      }
       setError(errorText(cause));
       await loadMessages(sessionId).catch(() => undefined);
     } finally {
@@ -426,8 +521,8 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
       const message = messages()[cursor];
       if (message?.role !== "user") continue;
-      const text = textOf(message);
-      if (text) void sendMessage(text);
+      const prompt = promptOf(message);
+      if (prompt.text) void sendMessage(prompt);
       return;
     }
   };
@@ -734,7 +829,12 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
                                   class="oc-v2-icon-button"
                                   aria-label="编辑此消息"
                                   onClick={() => {
-                                    setInput(textOf(message));
+                                    const prompt = promptOf(message);
+                                    setInput(prompt.text);
+                                    setComposerFiles(prompt.files);
+                                    setComposerCommand(prompt.command);
+                                    setLastCommand(prompt.command);
+                                    setAgentMode(prompt.mode);
                                     requestAnimationFrame(() =>
                                       composer?.focus(),
                                     );
@@ -768,9 +868,14 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
                             <Show
                               when={message.role === "assistant"}
                               fallback={
-                                <pre class="oc-v2-user-message">
-                                  {textOf(message)}
-                                </pre>
+                                <>
+                                  <PromptContextChips
+                                    prompt={promptOf(message)}
+                                  />
+                                  <pre class="oc-v2-user-message">
+                                    {textOf(message)}
+                                  </pre>
+                                </>
                               }
                             >
                               <MarkdownRenderer content={textOf(message)} />
@@ -816,92 +921,24 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
                 </div>
               </div>
 
-              <div class="oc-v2-prompt-region">
-                <form
-                  class="oc-v2-prompt-dock"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void sendMessage();
-                  }}
-                >
-                  <textarea
-                    ref={composer}
-                    id="chat-composer"
-                    aria-label="发送给当前 Provider"
-                    placeholder={
-                      busySessionId()
-                        ? "当前会话仍在运行…"
-                        : agentMode() === "plan"
-                          ? "描述目标，代理将先分析并给出计划…"
-                          : "Ask anything..."
-                    }
-                    value={input()}
-                    onInput={(event) => setInput(event.currentTarget.value)}
-                    onKeyDown={(event) => {
-                      if (
-                        event.key === "Enter" &&
-                        !event.shiftKey &&
-                        !event.isComposing
-                      ) {
-                        event.preventDefault();
-                        void sendMessage();
-                      }
-                    }}
-                  />
-                  <div class="oc-v2-prompt-toolbar">
-                    <select
-                      class="oc-v2-agent-select"
-                      aria-label="Agent mode"
-                      value={agentMode()}
-                      onChange={(event) =>
-                        setAgentMode(event.currentTarget.value as AgentMode)
-                      }
-                    >
-                      <option value="build">Build</option>
-                      <option value="plan">Plan</option>
-                    </select>
-                    <button
-                      type="button"
-                      class="oc-v2-provider-button"
-                      title={providerLabel()}
-                      onClick={() => props.onSelectMode?.("settings")}
-                    >
-                      <Icon name="models" size="small" />
-                      <span>{providerLabel() || "Select model"}</span>
-                    </button>
-                    <span class="oc-v2-prompt-hint">
-                      Enter 发送 · Shift Enter 换行
-                    </span>
-                    <Show
-                      when={busySessionId()}
-                      fallback={
-                        <button
-                          type="submit"
-                          class="oc-v2-send-button"
-                          disabled={!input().trim()}
-                          aria-label="发送消息"
-                        >
-                          <Icon name="arrow-up" size="small" />
-                        </button>
-                      }
-                    >
-                      <button
-                        type="button"
-                        class="oc-v2-stop-button"
-                        aria-label="停止生成"
-                        onClick={() => void stopGeneration()}
-                      >
-                        <Icon name="stop" size="small" />
-                      </button>
-                    </Show>
-                  </div>
-                </form>
-                <p class="oc-v2-prompt-policy">
-                  {agentMode() === "plan"
-                    ? "Plan 模式先分析和规划，不直接修改文件。"
-                    : "Build 模式可修改、执行并验证。"}
-                </p>
-              </div>
+              <ChatComposer
+                value={input()}
+                mode={agentMode()}
+                providerLabel={providerLabel()}
+                busy={Boolean(busySessionId())}
+                files={composerFiles()}
+                command={composerCommand()}
+                onValueChange={(value) => setInput(value)}
+                onModeChange={(mode) => setAgentMode(mode)}
+                onFilesChange={(files) => setComposerFiles(files)}
+                onCommandChange={(command) => setComposerCommand(command)}
+                onSubmit={() => void sendMessage()}
+                onStop={() => void stopGeneration()}
+                onOpenSettings={() => props.onSelectMode?.("settings")}
+                onReady={(element) => {
+                  composer = element;
+                }}
+              />
             </section>
 
             <Show when={sidePanelOpen()}>
@@ -935,6 +972,27 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
                       </span>
                     </div>
                     <p title={workspacePath()}>{workspacePath()}</p>
+                  </section>
+                  <section class="oc-v2-session-context-section">
+                    <h2>Session Context</h2>
+                    <Show
+                      when={
+                        sessionPromptContext().files.length ||
+                        sessionPromptContext().command
+                      }
+                      fallback={
+                        <p>使用 @ 引用文件，或用 / 选择单次工作流命令。</p>
+                      }
+                    >
+                      <PromptContextChips
+                        prompt={sessionPromptContext()}
+                        compact
+                      />
+                      <p>
+                        文件引用会在当前会话中保留；Slash Command
+                        发送后自动消费。
+                      </p>
+                    </Show>
                   </section>
                   <section>
                     <h2>工具</h2>

@@ -1061,6 +1061,235 @@
   color: var(--oc-text);
 }
 
+.oc-v2-composer-v2 {
+  position: relative;
+  overflow: visible;
+}
+
+.oc-v2-composer-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  max-height: min(420px, 56vh);
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--oc-border-strong);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--oc-layer-1) 97%, transparent);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 0.42);
+  backdrop-filter: blur(18px);
+}
+
+.oc-v2-composer-menu > header {
+  display: flex;
+  height: 34px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 11px;
+  border-bottom: 1px solid var(--oc-border);
+  color: var(--oc-muted);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.oc-v2-composer-menu > header small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--oc-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.oc-v2-composer-menu-row {
+  display: grid;
+  min-height: 48px;
+  grid-template-columns: 24px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--oc-border) 65%, transparent);
+  background: transparent;
+  color: var(--oc-muted);
+  text-align: left;
+}
+
+.oc-v2-composer-menu-row:last-child {
+  border-bottom: 0;
+}
+
+.oc-v2-composer-menu-row:hover,
+.oc-v2-composer-menu-row.is-selected {
+  background: var(--oc-layer-2);
+  color: var(--oc-text);
+}
+
+.oc-v2-composer-menu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--oc-faint);
+}
+
+.oc-v2-composer-menu-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.oc-v2-composer-menu-copy strong,
+.oc-v2-composer-menu-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.oc-v2-composer-menu-copy strong {
+  color: inherit;
+  font-size: 11px;
+  font-weight: 560;
+}
+
+.oc-v2-composer-menu-copy small {
+  color: var(--oc-faint);
+  font-size: 9px;
+}
+
+.oc-v2-composer-menu-row kbd {
+  color: var(--oc-faint);
+  font: inherit;
+  font-size: 10px;
+  text-align: center;
+}
+
+.oc-v2-composer-menu-empty {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  color: var(--oc-faint);
+  font-size: 10px;
+}
+
+.oc-v2-composer-context,
+.oc-v2-message-context {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.oc-v2-composer-context {
+  padding: 9px 11px 0;
+}
+
+.oc-v2-context-chip,
+.oc-v2-message-context-chip {
+  display: inline-flex;
+  max-width: 260px;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--oc-border);
+  border-radius: 6px;
+  background: var(--oc-layer-2);
+  color: var(--oc-muted);
+  font-size: 10px;
+}
+
+.oc-v2-context-chip {
+  height: 25px;
+  padding: 0 4px 0 7px;
+}
+
+.oc-v2-context-chip strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 520;
+}
+
+.oc-v2-context-chip button {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--oc-faint);
+}
+
+.oc-v2-context-chip button:hover {
+  background: var(--oc-layer-3);
+  color: var(--oc-text);
+}
+
+.oc-v2-context-chip.is-command,
+.oc-v2-message-context-chip.is-command {
+  border-color: color-mix(in srgb, var(--oc-accent) 40%, var(--oc-border));
+  color: color-mix(in srgb, var(--oc-accent) 78%, var(--oc-text));
+}
+
+.oc-v2-message-context {
+  margin-bottom: 8px;
+}
+
+.oc-v2-message-context.is-compact {
+  margin-bottom: 0;
+}
+
+.oc-v2-message-context-chip {
+  height: 23px;
+  padding: 0 7px;
+}
+
+.oc-v2-message-context.is-compact .oc-v2-message-context-chip {
+  max-width: 100%;
+}
+
+.oc-v2-composer-trigger-button {
+  display: inline-flex;
+  height: 28px;
+  min-width: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--oc-faint);
+  font: inherit;
+  font-size: 10px;
+}
+
+.oc-v2-composer-trigger-button:hover {
+  background: var(--oc-layer-2);
+  color: var(--oc-text);
+}
+
+.oc-v2-session-context-section .oc-v2-message-context {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.oc-v2-session-context-section .oc-v2-message-context-chip {
+  width: 100%;
+  justify-content: flex-start;
+}
+
 @keyframes oc-v2-pulse {
   0%,
   100% {
