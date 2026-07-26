@@ -41,10 +41,10 @@ const AgentOrchestrationPanel: Component<AgentOrchestrationPanelProps> = (
   };
 
   return (
-    <section class="oc-orchestration-panel mb-4 rounded-md border border-border bg-card p-3">
-      <div class="flex flex-wrap items-center gap-2">
-        <strong class="text-sm">Agent DAG 编排</strong>
-        <span class="text-xs text-muted-foreground">
+    <section class="oc-orchestration-panel oc-section">
+      <div class="oc-section-header">
+        <strong class="oc-section-title">Agent DAG 编排</strong>
+        <span class="oc-section-description">
           依赖由 SwarmManager 调度，完成步骤后自动释放后继任务。
         </span>
         <span class="flex-1" />
@@ -56,18 +56,18 @@ const AgentOrchestrationPanel: Component<AgentOrchestrationPanelProps> = (
           {running() ? "编排运行中…" : "运行 DAG"}
         </button>
       </div>
-      <label class="mt-3 block text-xs" for="agent-dag-plan">
+      <label class="oc-field" for="agent-dag-plan">
         DAG 计划（JSON）
         <textarea
           id="agent-dag-plan"
-          class="mt-1 min-h-40 w-full resize-y rounded border border-border bg-background p-3 font-mono text-xs"
+          class="oc-code-input"
           value={plan()}
           onInput={(event) => setPlan(event.currentTarget.value)}
           spellcheck={false}
         />
       </label>
       <Show when={results().length > 0}>
-        <div class="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+        <div class="oc-meta-row">
           <span>共 {summary().total} 步</span>
           <span>完成 {summary().completed}</span>
           <span classList={{ "text-error": summary().failed > 0 }}>
@@ -76,15 +76,15 @@ const AgentOrchestrationPanel: Component<AgentOrchestrationPanelProps> = (
           <span>运行中 {summary().running}</span>
           <span>等待 {summary().pending}</span>
         </div>
-        <div class="mt-2 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+        <div class="oc-result-grid">
           <For each={results()}>
             {(step) => (
-              <article class="rounded border border-border bg-background p-2 text-xs">
-                <div class="flex items-center gap-2">
+              <article class="oc-result-row">
+                <div class="oc-result-row-header">
                   <strong>{step.stepId}</strong>
                   <span class="text-muted-foreground">{step.status}</span>
                 </div>
-                <div class="mt-1 font-mono text-[10px] text-muted-foreground">
+                <div class="oc-result-row-meta">
                   task {step.taskId}
                   <Show when={step.sessionId}> · session {step.sessionId}</Show>
                 </div>
@@ -94,7 +94,7 @@ const AgentOrchestrationPanel: Component<AgentOrchestrationPanelProps> = (
                   </pre>
                 </Show>
                 <Show when={step.result !== undefined}>
-                  <pre class="mt-2 max-h-32 overflow-auto whitespace-pre-wrap rounded bg-card p-2">
+                  <pre class="oc-code-panel is-compact">
                     {formatValue(step.result)}
                   </pre>
                 </Show>

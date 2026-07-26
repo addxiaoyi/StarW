@@ -1,6 +1,19 @@
 export const LARGE_FILE_WARNING_BYTES = 1024 * 1024;
 export const MAX_FILE_PREVIEW_BYTES = 5 * 1024 * 1024;
 
+const GENERATED_ROOT_ENTRY_NAMES = new Set([
+  ".cache",
+  ".git",
+  ".tmp",
+  ".turbo",
+  ".vite",
+  "%systemdrive%",
+  "coverage",
+  "dist",
+  "node_modules",
+  "nvidia corporation",
+]);
+
 export interface WorkspaceBreadcrumb {
   label: string;
   path: string;
@@ -17,6 +30,14 @@ export function errorText(error: unknown): string {
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function isGeneratedWorkspaceEntry(
+  name: string,
+  currentPath: string,
+): boolean {
+  if (currentPath !== ".") return false;
+  return GENERATED_ROOT_ENTRY_NAMES.has(name.trim().toLowerCase());
 }
 
 export function formatValue(value: unknown): string {

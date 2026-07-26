@@ -96,8 +96,10 @@ function eventRecord(value: unknown): Record<string, unknown> | null {
 }
 
 function applyResolvedTheme(theme: "dark" | "light") {
-  document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme = theme;
+  const root = document.documentElement;
+  root.dataset.theme = theme;
+  root.style.colorScheme = theme;
+  root.classList.toggle("dark", theme === "dark");
 }
 
 const WorkbenchShell: Component = () => {
@@ -114,7 +116,7 @@ const WorkbenchShell: Component = () => {
   const [settingsDirty, setSettingsDirty] = createSignal(false);
   const [inspectorMode, setInspectorMode] =
     createSignal<InspectorMode>("agents");
-  const [inspectorOpen, setInspectorOpen] = createSignal(true);
+  const [inspectorOpen, setInspectorOpen] = createSignal(false);
   const [inspectorWidth, setInspectorWidth] = createSignal(280);
   let stopPanelResize = () => {};
   const [paletteOpen, setPaletteOpen] = createSignal(false);

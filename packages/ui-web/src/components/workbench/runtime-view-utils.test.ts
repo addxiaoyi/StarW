@@ -3,6 +3,7 @@ import {
   findNextTextMatch,
   formatBytes,
   formatValue,
+  isGeneratedWorkspaceEntry,
   joinWorkspacePath,
   parentWorkspacePath,
   workspaceBreadcrumbs,
@@ -20,6 +21,17 @@ describe("runtime view utilities", () => {
   it("formats strings directly and structured values as JSON", () => {
     expect(formatValue("plain")).toBe("plain");
     expect(formatValue({ enabled: true })).toBe('{\n  "enabled": true\n}');
+  });
+
+  it("hides generated and accidental root entries without hiding nested files", () => {
+    expect(isGeneratedWorkspaceEntry("node_modules", ".")).toBe(true);
+    expect(isGeneratedWorkspaceEntry("%SystemDrive%", ".")).toBe(true);
+    expect(isGeneratedWorkspaceEntry("NVIDIA Corporation", ".")).toBe(true);
+    expect(isGeneratedWorkspaceEntry("node_modules", "packages/ui-web")).toBe(
+      false,
+    );
+    expect(isGeneratedWorkspaceEntry(".github", ".")).toBe(false);
+    expect(isGeneratedWorkspaceEntry("packages", ".")).toBe(false);
   });
 
   it("joins user-entered names to workspace-relative paths", () => {

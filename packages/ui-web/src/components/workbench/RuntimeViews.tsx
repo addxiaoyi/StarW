@@ -1,6 +1,7 @@
 import {
   type Component,
   createEffect,
+  createMemo,
   createSignal,
   For,
   onCleanup,
@@ -20,6 +21,7 @@ import {
   findNextTextMatch,
   formatBytes,
   formatValue,
+  isGeneratedWorkspaceEntry,
   isRecord,
   joinWorkspacePath,
   LARGE_FILE_WARNING_BYTES,
@@ -74,6 +76,7 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
   const [currentPath, setCurrentPath] = createSignal(".");
   const [workspace, setWorkspace] = createSignal("");
   const [entries, setEntries] = createSignal<FileEntry[]>([]);
+  const [showGeneratedEntries, setShowGeneratedEntries] = createSignal(false);
   const [selectedPath, setSelectedPath] = createSignal("");
   const [content, setContent] = createSignal("");
   const [dirty, setDirty] = createSignal(false);
@@ -96,6 +99,20 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
   let lineGutter!: HTMLPreElement;
   const [saving, setSaving] = createSignal(false);
   const [error, setError] = createSignal("");
+
+  const generatedEntryCount = createMemo(
+    () =>
+      entries().filter((entry) =>
+        isGeneratedWorkspaceEntry(entry.name, currentPath()),
+      ).length,
+  );
+  const visibleEntries = createMemo(() =>
+    showGeneratedEntries()
+      ? entries()
+      : entries().filter(
+          (entry) => !isGeneratedWorkspaceEntry(entry.name, currentPath()),
+        ),
+  );
 
   createEffect(() => props.onDirtyChange?.(dirty()));
 
@@ -435,6 +452,17 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
           >
             {directoryLoading() ? "刷新中…" : "刷新"}
           </button>
+          <Show when={currentPath() === "." && generatedEntryCount() > 0}>
+            <button
+              class="oc-button"
+              aria-pressed={showGeneratedEntries()}
+              onClick={() => setShowGeneratedEntries((visible) => !visible)}
+            >
+              {showGeneratedEntries()
+                ? `隐藏生成项 (${generatedEntryCount()})`
+                : `显示生成项 (${generatedEntryCount()})`}
+            </button>
+          </Show>
           <button class="oc-button" onClick={() => void selectWorkspace()}>
             切换工作区
           </button>
@@ -465,8 +493,8 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
       </Show>
       <Show when={conflict()}>
         {(latest) => (
-          <section class="mx-3 mt-3 rounded-md border border-warning/60 bg-warning/10 p-3 text-sm">
-            <div class="flex flex-wrap items-center gap-2">
+          <section class="oc-conflict-panel oc-inline-notice is-warning">
+            <div class="oc-inline-notice-header">
               <strong class="text-warning">磁盘版本已变化</strong>
               <span class="text-muted-foreground">
                 当前编辑内容尚未保存，请选择处理方式。
@@ -483,22 +511,16 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
                 覆盖磁盘版本
               </button>
             </div>
-            <details class="mt-3">
-              <summary class="cursor-pointer text-xs">
-                比较当前编辑与磁盘版本
-              </summary>
-              <div class="mt-2 grid gap-2 lg:grid-cols-2">
+            <details class="oc-conflict-details">
+              <summary>比较当前编辑与磁盘版本</summary>
+              <div class="oc-compare-grid">
                 <div>
                   <strong class="text-xs">当前编辑</strong>
-                  <pre class="mt-1 max-h-56 overflow-auto whitespace-pre-wrap rounded border border-border bg-background p-2 text-xs">
-                    {content()}
-                  </pre>
+                  <pre class="oc-code-panel is-compare">{content()}</pre>
                 </div>
                 <div>
                   <strong class="text-xs">磁盘版本</strong>
-                  <pre class="mt-1 max-h-56 overflow-auto whitespace-pre-wrap rounded border border-border bg-background p-2 text-xs">
-                    {latest().content}
-                  </pre>
+                  <pre class="oc-code-panel is-compare">{latest().content}</pre>
                 </div>
               </div>
             </details>
@@ -511,7 +533,7 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
           aria-busy={directoryLoading()}
         >
           <Show
-            when={entries().length > 0}
+            when={visibleEntries().length > 0}
             fallback={
               <EmptyState
                 title={directoryLoading() ? "正在读取目录" : "目录为空"}
@@ -519,9 +541,9 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
               />
             }
           >
-            <For each={entries()}>
+            <For each={visibleEntries()}>
               {(entry) => (
-                <div class="flex items-center border-b border-border/50">
+                <div class="oc-file-entry">
                   <button
                     type="button"
                     class="oc-file-row"
@@ -545,7 +567,7 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
                   </button>
                   <button
                     type="button"
-                    class="sc-icon-button shrink-0"
+                    class="sc-icon-button oc-row-action"
                     aria-label={`重命名或移动 ${entry.name}`}
                     title="重命名或移动"
                     onClick={() => void renameOrMoveEntry(entry)}
@@ -554,7 +576,7 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
                   </button>
                   <button
                     type="button"
-                    class="sc-icon-button shrink-0 text-error"
+                    class="sc-icon-button oc-row-action text-error"
                     aria-label={`删除 ${entry.name}`}
                     title="删除"
                     onClick={() => void deleteEntry(entry)}
@@ -593,11 +615,11 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
                 <Show when={dirty()}>
                   <span class="text-warning">未保存</span>
                 </Show>
-                <label class="flex items-center gap-1" for="file-editor-search">
+                <label class="oc-inline-field" for="file-editor-search">
                   搜索
                   <input
                     id="file-editor-search"
-                    class="w-40 rounded border border-border bg-background px-2 py-1 font-sans"
+                    class="oc-compact-input"
                     value={searchText()}
                     onInput={(event) => {
                       setSearchText(event.currentTarget.value);
@@ -1050,11 +1072,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
                 </small>
                 <div class="mt-2 flex flex-wrap gap-1">
                   <For each={agent.tools ?? []}>
-                    {(tool) => (
-                      <span class="rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                        {tool}
-                      </span>
-                    )}
+                    {(tool) => <span class="oc-tool-chip">{tool}</span>}
                   </For>
                 </div>
               </button>
@@ -1073,7 +1091,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
             onError={setError}
           />
           <textarea
-            class="mt-2 min-h-28 w-full resize-y rounded-md border border-border bg-background p-3 text-sm"
+            class="oc-agent-prompt"
             placeholder="给选中的 Agent 分配真实模型任务…"
             value={prompt()}
             onInput={(event) => setPrompt(event.currentTarget.value)}
@@ -1093,11 +1111,11 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
           <AgentOrchestrationPanel onCompleted={refresh} onError={setError} />
 
           <Show when={approvals().length > 0}>
-            <section class="mb-4 rounded-md border border-warning/50 bg-card p-3">
+            <section class="oc-agent-section oc-approval-section">
               <strong class="text-sm">等待危险操作审批</strong>
               <For each={approvals()}>
                 {(approval) => (
-                  <article class="mt-2 rounded border border-border bg-background p-2 text-xs">
+                  <article class="oc-approval-row">
                     <div class="flex items-center gap-2">
                       <strong>{approval.request.tool}</strong>
                       <span class="text-warning">{approval.request.risk}</span>
@@ -1118,7 +1136,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
                     <p class="mt-1 text-muted-foreground">
                       {approval.request.summary}
                     </p>
-                    <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                    <div class="oc-meta-row">
                       <span>session {approval.sessionId}</span>
                       <Show
                         when={
@@ -1141,16 +1159,12 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
                     <Show when={approval.request.paths?.length}>
                       <div class="mt-2 flex flex-wrap gap-1">
                         <For each={approval.request.paths}>
-                          {(path) => (
-                            <code class="rounded border border-border bg-card px-1.5 py-0.5">
-                              {path}
-                            </code>
-                          )}
+                          {(path) => <code class="oc-path-chip">{path}</code>}
                         </For>
                       </div>
                     </Show>
                     <Show when={approval.request.command}>
-                      <pre class="mt-2 overflow-auto rounded bg-card p-2 font-mono">
+                      <pre class="oc-code-panel is-compact">
                         {approval.request.command}
                       </pre>
                     </Show>
@@ -1161,7 +1175,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
           </Show>
 
           <Show when={changes().length > 0}>
-            <section class="mb-4 rounded-md border border-border bg-card p-3">
+            <section class="oc-agent-section oc-changes-section">
               <div class="flex items-center gap-2">
                 <strong class="text-sm">Agent 文件修改与回滚</strong>
                 <span class="text-xs text-muted-foreground">
@@ -1171,7 +1185,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
               </div>
               <For each={changes().slice(0, visibleChanges())}>
                 {(change) => (
-                  <details class="mt-2 rounded border border-border bg-background p-2 text-xs">
+                  <details class="oc-approval-row">
                     <summary class="cursor-pointer">
                       {change.tool} · {change.path}
                       <Show when={change.rolledBackAt}> · 已回滚</Show>
@@ -1205,7 +1219,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
             </section>
           </Show>
 
-          <div class="mb-3 flex flex-wrap items-center gap-2">
+          <div class="oc-section-heading">
             <strong class="text-sm">Agent 会话</strong>
             <span class="text-xs text-muted-foreground">
               有状态模型循环 · 工具结果回灌 · 持久化轨迹
@@ -1218,7 +1232,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
               事件筛选
               <select
                 id="agent-event-filter"
-                class="rounded border border-border bg-background px-2 py-1"
+                class="oc-control"
                 value={eventFilter()}
                 onChange={(event) => setEventFilter(event.currentTarget.value)}
               >
@@ -1240,8 +1254,8 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
           >
             <For each={sessions()}>
               {(session) => (
-                <article class="mb-3 rounded-md border border-border bg-card p-3">
-                  <header class="flex flex-wrap items-center gap-2">
+                <article class="oc-agent-session-row">
+                  <header class="oc-inline-notice-header">
                     <Show
                       when={renamingSessionId() === session.id}
                       fallback={
@@ -1258,7 +1272,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
                         会话名称
                         <input
                           id={`agent-session-name-${session.id}`}
-                          class="min-w-0 flex-1 rounded border border-border bg-background px-2 py-1"
+                          class="oc-control min-w-0 flex-1"
                           value={renameSessionText()}
                           onInput={(event) =>
                             setRenameSessionText(event.currentTarget.value)
@@ -1330,7 +1344,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
                       </button>
                     </Show>
                   </header>
-                  <div class="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                  <div class="oc-meta-row">
                     <span>{session.id}</span>
                     <Show when={session.taskId}>
                       <span>task {session.taskId}</span>
@@ -1347,7 +1361,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
                     </Show>
                   </div>
                   <Show when={session.events?.length}>
-                    <div class="mt-3 rounded border border-border bg-background p-2">
+                    <div class="oc-event-panel">
                       <div class="mb-2 flex items-center gap-2 text-[11px] text-muted-foreground">
                         <span>
                           显示 {visibleSessionEvents(session).length} /{" "}
@@ -1394,7 +1408,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
                     </div>
                   </Show>
                   <Show when={liveOutput()[session.id]}>
-                    <div class="mt-3 rounded border border-ring/40 bg-background p-3">
+                    <div class="oc-output-panel is-live">
                       <div class="mb-2 text-[11px] text-muted-foreground">
                         模型流式输出
                       </div>
@@ -1410,7 +1424,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
                   </Show>
                   <Show when={session.result}>
                     {(result) => (
-                      <div class="mt-3 rounded border border-border bg-background p-3">
+                      <div class="oc-output-panel">
                         <div class="mb-2 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
                           <span>{result().iterations} 轮</span>
                           <span>{result().toolExecutions} 次工具调用</span>
@@ -1428,7 +1442,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
             </For>
           </Show>
 
-          <div class="mb-3 mt-6 flex items-center gap-2 border-t border-border pt-4">
+          <div class="oc-section-heading is-separated">
             <strong class="text-sm">Swarm 队列</strong>
             <span class="text-xs text-muted-foreground">
               调度、并发与任务级状态
@@ -1445,7 +1459,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
           >
             <For each={tasks()}>
               {(task) => (
-                <article class="mb-3 rounded-md border border-border bg-card p-3">
+                <article class="oc-agent-session-row">
                   <header class="flex items-center gap-2">
                     <strong class="min-w-0 flex-1 truncate">{task.name}</strong>
                     <span class="text-xs text-muted-foreground">
@@ -1471,9 +1485,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
                     </pre>
                   </Show>
                   <Show when={task.result !== undefined}>
-                    <pre class="mt-2 max-h-72 overflow-auto whitespace-pre-wrap rounded bg-background p-2 text-xs">
-                      {formatValue(task.result)}
-                    </pre>
+                    <pre class="oc-code-panel">{formatValue(task.result)}</pre>
                   </Show>
                 </article>
               )}
@@ -1491,7 +1503,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = (props) => {
           }}
         >
           <section
-            class="w-full max-w-md rounded-md border border-border bg-card p-4 shadow-xl"
+            class="oc-dialog"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="agent-confirm-title"
@@ -1760,7 +1772,7 @@ export const SkillsRuntimeView: Component<RuntimeViewProps> = (props) => {
                       JSON 参数
                       <textarea
                         id="skill-json-arguments"
-                        class="mt-1 h-40 w-full resize-y rounded-md border border-border bg-background p-3 font-mono text-sm"
+                        class="oc-code-input"
                         aria-describedby="skill-json-help"
                         value={argumentsText()}
                         onInput={(event) =>
@@ -1803,7 +1815,7 @@ export const SkillsRuntimeView: Component<RuntimeViewProps> = (props) => {
                                         ? "number"
                                         : "text"
                                     }
-                                    class="mt-1 w-full rounded border border-border bg-background px-2 py-1.5"
+                                    class="oc-control"
                                     value={String(fieldValues()[name] ?? "")}
                                     onInput={(event) =>
                                       setFieldValues((current) => ({
@@ -1816,7 +1828,7 @@ export const SkillsRuntimeView: Component<RuntimeViewProps> = (props) => {
                               >
                                 <select
                                   id={`skill-field-${name}`}
-                                  class="mt-1 w-full rounded border border-border bg-background px-2 py-1.5"
+                                  class="oc-control"
                                   value={String(fieldValues()[name] ?? "")}
                                   onChange={(event) =>
                                     setFieldValues((current) => ({
@@ -1871,9 +1883,7 @@ export const SkillsRuntimeView: Component<RuntimeViewProps> = (props) => {
                   <ErrorNotice message={error()} />
                 </Show>
                 <Show when={result()}>
-                  <pre class="min-h-40 flex-1 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-card p-3 text-xs">
-                    {result()}
-                  </pre>
+                  <pre class="oc-code-panel is-result">{result()}</pre>
                 </Show>
               </>
             )}
@@ -2166,7 +2176,7 @@ export const McpRuntimeView: Component<RuntimeViewProps> = (props) => {
               JSON 参数
               <textarea
                 id="mcp-tool-arguments"
-                class="mt-1 h-40 w-full rounded-md border border-border bg-background p-3 font-mono text-sm"
+                class="oc-code-input"
                 aria-describedby="mcp-tool-help"
                 value={argumentsText()}
                 onInput={(event) => setArgumentsText(event.currentTarget.value)}
@@ -2194,9 +2204,7 @@ export const McpRuntimeView: Component<RuntimeViewProps> = (props) => {
               </Show>
             </div>
             <Show when={result()}>
-              <pre class="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded border border-border p-3 text-xs">
-                {result()}
-              </pre>
+              <pre class="oc-code-panel is-result">{result()}</pre>
             </Show>
           </Show>
         </main>
@@ -2277,7 +2285,7 @@ export const BrowserRuntimeView: Component = () => {
             此页面不嵌入或模拟网页内容。
           </small>
           <Show when={error()}>
-            <div id="external-url-error" class="mt-3">
+            <div id="external-url-error" class="oc-conflict-details">
               <ErrorNotice message={error()} />
             </div>
           </Show>
@@ -2622,7 +2630,7 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
               <ErrorNotice message={error()} />
             </Show>
             <Show when={saved()}>
-              <div class="rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-success">
+              <div class="oc-inline-notice is-success">
                 配置已保存并重新加载运行时。
               </div>
             </Show>
@@ -2648,7 +2656,7 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                       工作区
                       <div class="mt-1 flex gap-2">
                         <input
-                          class="min-w-0 flex-1 rounded border border-border bg-background px-3 py-2"
+                          class="oc-control min-w-0 flex-1"
                           value={value().workspace}
                           onInput={(event) =>
                             setConfig({
@@ -2668,7 +2676,7 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                     <label class="mt-3 block text-sm">
                       主题
                       <select
-                        class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                        class="oc-control"
                         value={value().theme}
                         onChange={(event) =>
                           setConfig({
@@ -2697,7 +2705,7 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                     <label class="mt-3 block text-sm">
                       默认 Provider
                       <select
-                        class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                        class="oc-control"
                         value={value().selectedProvider}
                         onChange={(event) =>
                           setConfig({
@@ -2741,7 +2749,7 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                               <label class="text-sm">
                                 Base URL
                                 <input
-                                  class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                                  class="oc-control"
                                   value={provider().baseUrl}
                                   onInput={(event) =>
                                     updateProvider(id, {
@@ -2753,7 +2761,7 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                               <label class="text-sm">
                                 模型
                                 <input
-                                  class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                                  class="oc-control"
                                   value={provider().model}
                                   onInput={(event) =>
                                     updateProvider(id, {
@@ -2768,7 +2776,7 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                               API Key
                               <input
                                 type="password"
-                                class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                                class="oc-control"
                                 value={provider().apiKey || ""}
                                 onInput={(event) =>
                                   updateProvider(id, {
@@ -2827,7 +2835,7 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                           type="number"
                           min="1"
                           max="32"
-                          class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                          class="oc-control"
                           value={value().swarm.maxWorkers}
                           onInput={(event) =>
                             setConfig({
@@ -2846,7 +2854,7 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                           type="number"
                           min="1"
                           max="32"
-                          class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                          class="oc-control"
                           value={value().swarm.maxConcurrency}
                           onInput={(event) =>
                             setConfig({
@@ -2866,7 +2874,7 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                         <input
                           type="number"
                           min="1000"
-                          class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                          class="oc-control"
                           value={value().swarm.taskTimeoutMs}
                           onInput={(event) =>
                             setConfig({
@@ -2892,7 +2900,7 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                         !settingsSectionVisible("settings-mcp"),
                     }}
                   >
-                    <div class="flex flex-wrap items-center gap-2">
+                    <div class="oc-inline-notice-header">
                       <div>
                         <h2 class="font-semibold">MCP stdio Servers</h2>
                         <p class="mt-1 text-xs text-muted-foreground">
@@ -2913,7 +2921,7 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
                       MCP Server JSON
                       <textarea
                         id="settings-mcp-json"
-                        class="mt-1 h-64 w-full resize-y rounded border border-border bg-background p-3 font-mono text-xs"
+                        class="oc-code-input is-tall"
                         aria-describedby="settings-mcp-help"
                         value={mcpText()}
                         onInput={(event) =>

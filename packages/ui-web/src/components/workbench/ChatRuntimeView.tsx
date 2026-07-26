@@ -12,6 +12,7 @@ import { Icon, type IconName } from "../Icon";
 import MarkdownRenderer from "../MarkdownRenderer";
 import { desktopRequest, subscribeDesktopEvent } from "../../services/desktop";
 import ChatComposer from "./ChatComposer";
+import ChatSessionSidePanel from "./ChatSessionSidePanel";
 import {
   type AgentMode,
   type ComposerCommandId,
@@ -39,6 +40,22 @@ interface ChatMessage {
   usage?: Record<string, number>;
   finish_reason?: string;
   optimistic?: boolean;
+}
+
+interface ChatDraftState {
+  input: string;
+  mode: AgentMode;
+  files: ComposerFileContext[];
+  command?: ComposerCommandId;
+  lastCommand?: ComposerCommandId;
+}
+
+function emptyDraftState(): ChatDraftState {
+  return {
+    input: "",
+    mode: "build",
+    files: [],
+  };
 }
 
 type ChatToolMode =
@@ -188,6 +205,9 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
   const [sessionQuery, setSessionQuery] = createSignal("");
   const [view, setView] = createSignal<ChatView>("home");
   const [openTabIds, setOpenTabIds] = createSignal<string[]>([]);
+  const [draftOpen, setDraftOpen] = createSignal(false);
+  const [draftState, setDraftState] =
+    createSignal<ChatDraftState>(emptyDraftState());
   const [sidePanelOpen, setSidePanelOpen] = createSignal(false);
   let requestSequence = 0;
   let messageList!: HTMLDivElement;
@@ -224,6 +244,9 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
       .map((id) => sessions().find((session) => session.id === id))
       .filter((session): session is ChatSession => Boolean(session)),
   );
+  const isDraftActive = createMemo(
+    () => view() === "session" && draftOpen() && !activeId(),
+  );
   const sessionPromptContext = createMemo<ParsedComposerPrompt>(() => ({
     text: "",
     mode: agentMode(),
@@ -242,6 +265,17 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     messages().length;
     streamingText();
     requestAnimationFrame(scrollToBottom);
+  });
+
+  createEffect(() => {
+    if (!isDraftActive()) return;
+    setDraftState({
+      input: input(),
+      mode: agentMode(),
+      files: composerFiles(),
+      command: composerCommand(),
+      lastCommand: lastCommand(),
+    });
   });
 
   const loadConfig = async () => {
@@ -372,10 +406,7 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     }
   };
 
-  const createSession = async (
-    name = "New Task",
-    options: { preserveComposer?: boolean } = {},
-  ) => {
+  const persistSession = async (name = "New Task") => {
     const result = await desktopRequest<{ session: ChatSession }>(
       "sessions/create",
       { name },
@@ -383,6 +414,7 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     await loadSessions();
     requestSequence += 1;
     setSessionQuery("");
+    setDraftOpen(false);
     setOpenTabIds((current) =>
       current.includes(result.session.id)
         ? current
@@ -392,15 +424,52 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     setView("session");
     setMessages([]);
     setStreamingText("");
-    if (!options.preserveComposer) {
-      setInput("");
-      setComposerFiles([]);
-      setComposerCommand(undefined);
-      setLastCommand(undefined);
-      setAgentMode("build");
-    }
     requestAnimationFrame(() => composer?.focus());
     return result.session;
+  };
+
+  const openDraft = () => {
+    const draft = draftOpen() ? draftState() : emptyDraftState();
+    if (!draftOpen()) setDraftState(draft);
+    requestSequence += 1;
+    setDraftOpen(true);
+    setActiveId("");
+    setView("session");
+    setMessages([]);
+    setStreamingText("");
+    setError("");
+    setInput(draft.input);
+    setAgentMode(draft.mode);
+    setComposerFiles(draft.files);
+    setComposerCommand(draft.command);
+    setLastCommand(draft.lastCommand);
+    followBottom = true;
+    requestAnimationFrame(() => composer?.focus());
+  };
+
+  const closeDraftTab = () => {
+    const wasActive = isDraftActive();
+    setDraftOpen(false);
+    setDraftState(emptyDraftState());
+    if (!wasActive) return;
+
+    const next = openTabIds().at(-1);
+    if (next) {
+      setView("session");
+      selectSession(next);
+      return;
+    }
+
+    requestSequence += 1;
+    setActiveId("");
+    setMessages([]);
+    setStreamingText("");
+    setInput("");
+    setComposerFiles([]);
+    setComposerCommand(undefined);
+    setLastCommand(undefined);
+    setAgentMode("build");
+    setView("home");
   };
 
   const selectSession = (sessionId: string) => {
@@ -461,10 +530,7 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
     setError("");
     setStreamingText("");
     try {
-      if (!sessionId)
-        sessionId = (
-          await createSession(text.slice(0, 48), { preserveComposer: true })
-        ).id;
+      if (!sessionId) sessionId = (await persistSession(text.slice(0, 48))).id;
       setBusySessionId(sessionId);
       setLastCommand(command);
       if (!override) {
@@ -645,12 +711,39 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
               </div>
             )}
           </For>
+          <Show when={draftOpen()}>
+            <div
+              class="oc-v2-tab is-draft"
+              classList={{ "is-active": isDraftActive() }}
+              data-draft-tab="true"
+              role="tab"
+              aria-selected={isDraftActive()}
+              title="新会话草稿"
+              onClick={openDraft}
+            >
+              <span class="oc-v2-tab-avatar is-draft">
+                <Icon name="edit" size="small" />
+              </span>
+              <span class="oc-v2-tab-title">新会话</span>
+              <button
+                type="button"
+                class="oc-v2-tab-close"
+                aria-label="关闭新会话草稿"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  closeDraftTab();
+                }}
+              >
+                <Icon name="close-small" size="small" />
+              </button>
+            </div>
+          </Show>
         </div>
         <button
           type="button"
           class="oc-v2-titlebar-button"
           aria-label="新建会话"
-          onClick={() => void createSession()}
+          onClick={openDraft}
         >
           <Icon name="plus" size="small" />
         </button>
@@ -710,7 +803,7 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
                     type="button"
                     class="oc-v2-icon-button"
                     aria-label="新建会话"
-                    onClick={() => void createSession()}
+                    onClick={openDraft}
                   >
                     <Icon name="new-session" size="small" />
                   </button>
@@ -942,84 +1035,15 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
             </section>
 
             <Show when={sidePanelOpen()}>
-              <aside class="oc-v2-side-panel" aria-label="文件与审查">
-                <header class="oc-v2-side-panel-header">
-                  <div>
-                    <span>WORKSPACE</span>
-                    <strong>文件与审查</strong>
-                  </div>
-                  <button
-                    type="button"
-                    class="oc-v2-icon-button"
-                    aria-label="关闭文件与审查面板"
-                    onClick={() => setSidePanelOpen(false)}
-                  >
-                    <Icon name="close-small" size="small" />
-                  </button>
-                </header>
-                <div class="oc-v2-side-panel-body">
-                  <section>
-                    <h2>当前工作区</h2>
-                    <div class="oc-v2-project-card">
-                      <span class="oc-v2-project-avatar">
-                        {workspaceName(workspacePath())
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </span>
-                      <span>
-                        <strong>{workspaceName(workspacePath())}</strong>
-                        <small>{branch() || "local workspace"}</small>
-                      </span>
-                    </div>
-                    <p title={workspacePath()}>{workspacePath()}</p>
-                  </section>
-                  <section class="oc-v2-session-context-section">
-                    <h2>Session Context</h2>
-                    <Show
-                      when={
-                        sessionPromptContext().files.length ||
-                        sessionPromptContext().command
-                      }
-                      fallback={
-                        <p>使用 @ 引用文件，或用 / 选择单次工作流命令。</p>
-                      }
-                    >
-                      <PromptContextChips
-                        prompt={sessionPromptContext()}
-                        compact
-                      />
-                      <p>
-                        文件引用会在当前会话中保留；Slash Command
-                        发送后自动消费。
-                      </p>
-                    </Show>
-                  </section>
-                  <section>
-                    <h2>工具</h2>
-                    <button
-                      type="button"
-                      onClick={() => props.onSelectMode?.("files")}
-                    >
-                      <Icon name="file-tree" size="small" />
-                      打开文件浏览器
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => props.onSelectMode?.("terminal")}
-                    >
-                      <Icon name="terminal" size="small" />
-                      打开终端
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => props.onSelectMode?.("agents")}
-                    >
-                      <Icon name="subagent" size="small" />
-                      查看智能体
-                    </button>
-                  </section>
-                </div>
-              </aside>
+              <ChatSessionSidePanel
+                workspacePath={workspacePath()}
+                branch={branch()}
+                sessionId={activeId()}
+                files={composerFiles()}
+                command={composerCommand() || lastCommand()}
+                onFilesChange={(files) => setComposerFiles(files)}
+                onClose={() => setSidePanelOpen(false)}
+              />
             </Show>
           </div>
         }
@@ -1088,7 +1112,7 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
               </label>
               <div class="oc-v2-home-session-toolbar">
                 <span>最近会话</span>
-                <button type="button" onClick={() => void createSession()}>
+                <button type="button" onClick={openDraft}>
                   <Icon name="edit" size="small" />
                   新建会话
                 </button>
@@ -1108,10 +1132,7 @@ const ChatRuntimeView: Component<ChatRuntimeViewProps> = (props) => {
                           : "创建会话后，它会显示在这里。"}
                       </p>
                       <Show when={!sessionQuery()}>
-                        <button
-                          type="button"
-                          onClick={() => void createSession()}
-                        >
+                        <button type="button" onClick={openDraft}>
                           <Icon name="edit" size="small" />
                           新建会话
                         </button>

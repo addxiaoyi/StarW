@@ -70,9 +70,9 @@ const AgentEditorPanel: Component<AgentEditorPanelProps> = (props) => {
   };
 
   return (
-    <div class="oc-agent-editor mt-4 rounded-md border border-border bg-card p-3">
-      <div class="flex items-center gap-2">
-        <strong class="text-xs">
+    <div class="oc-agent-editor">
+      <div class="oc-agent-editor-header">
+        <strong class="oc-section-title">
           {editing() ? "编辑自定义 Agent" : "新建自定义 Agent"}
         </strong>
         <span class="flex-1" />
@@ -80,11 +80,11 @@ const AgentEditorPanel: Component<AgentEditorPanelProps> = (props) => {
           新建模式
         </button>
       </div>
-      <label class="mt-2 block text-[11px]" for="agent-name">
+      <label class="oc-field" for="agent-name">
         名称
         <input
           id="agent-name"
-          class="mt-1 w-full rounded border border-border bg-background px-2 py-1.5 text-sm"
+          class="oc-control"
           placeholder="review-agent"
           disabled={editing()}
           aria-invalid={Boolean(validation().nameError)}
@@ -102,11 +102,11 @@ const AgentEditorPanel: Component<AgentEditorPanelProps> = (props) => {
       >
         {validation().nameError || "2–32 位小写字母、数字和连字符"}
       </small>
-      <label class="mt-2 block text-[11px]" for="agent-description">
+      <label class="oc-field" for="agent-description">
         用途说明
         <input
           id="agent-description"
-          class="mt-1 w-full rounded border border-border bg-background px-2 py-1.5 text-sm"
+          class="oc-control"
           placeholder="说明此 Agent 负责的工作"
           aria-invalid={Boolean(validation().descriptionError)}
           value={form().description}
@@ -118,11 +118,11 @@ const AgentEditorPanel: Component<AgentEditorPanelProps> = (props) => {
       <Show when={validation().descriptionError}>
         <small class="text-error">{validation().descriptionError}</small>
       </Show>
-      <label class="mt-2 block text-[11px]" for="agent-instructions">
+      <label class="oc-field" for="agent-instructions">
         系统指令
         <textarea
           id="agent-instructions"
-          class="mt-1 min-h-20 w-full resize-y rounded border border-border bg-background p-2 text-xs"
+          class="oc-code-input is-compact"
           placeholder="定义边界、输出格式和决策规则"
           value={form().instructions}
           onInput={(event) =>
@@ -130,12 +130,12 @@ const AgentEditorPanel: Component<AgentEditorPanelProps> = (props) => {
           }
         />
       </label>
-      <div class="mt-2 grid grid-cols-2 gap-2">
-        <label class="text-[11px]" for="agent-provider">
+      <div class="oc-field-grid is-two">
+        <label class="oc-field" for="agent-provider">
           Provider
           <input
             id="agent-provider"
-            class="mt-1 w-full rounded border border-border bg-background px-2 py-1.5 text-xs"
+            class="oc-control"
             placeholder="继承默认"
             value={form().provider}
             onInput={(event) =>
@@ -143,22 +143,22 @@ const AgentEditorPanel: Component<AgentEditorPanelProps> = (props) => {
             }
           />
         </label>
-        <label class="text-[11px]" for="agent-model">
+        <label class="oc-field" for="agent-model">
           Model
           <input
             id="agent-model"
-            class="mt-1 w-full rounded border border-border bg-background px-2 py-1.5 text-xs"
+            class="oc-control"
             placeholder="继承默认"
             value={form().model}
             onInput={(event) => updateForm("model", event.currentTarget.value)}
           />
         </label>
       </div>
-      <label class="mt-2 block text-[11px]" for="agent-allowed-directories">
+      <label class="oc-field" for="agent-allowed-directories">
         允许目录（每行一个）
         <textarea
           id="agent-allowed-directories"
-          class="mt-1 min-h-16 w-full resize-y rounded border border-border bg-background p-2 font-mono text-xs"
+          class="oc-code-input is-compact"
           placeholder={"src\ntests"}
           value={form().allowedDirectories}
           onInput={(event) =>
@@ -166,11 +166,11 @@ const AgentEditorPanel: Component<AgentEditorPanelProps> = (props) => {
           }
         />
       </label>
-      <label class="mt-2 block text-[11px]" for="agent-denied-patterns">
+      <label class="oc-field" for="agent-denied-patterns">
         拒绝模式（每行一个）
         <textarea
           id="agent-denied-patterns"
-          class="mt-1 min-h-16 w-full resize-y rounded border border-border bg-background p-2 font-mono text-xs"
+          class="oc-code-input is-compact"
           placeholder={"*.env\nsecrets/**"}
           value={form().deniedPatterns}
           onInput={(event) =>
@@ -178,8 +178,8 @@ const AgentEditorPanel: Component<AgentEditorPanelProps> = (props) => {
           }
         />
       </label>
-      <fieldset class="mt-2 grid grid-cols-2 gap-1 text-[11px]">
-        <legend class="col-span-2 mb-1 text-muted-foreground">能力权限</legend>
+      <fieldset class="oc-capability-grid">
+        <legend class="oc-capability-legend">能力权限</legend>
         <label>
           <input
             type="checkbox"
@@ -222,7 +222,7 @@ const AgentEditorPanel: Component<AgentEditorPanelProps> = (props) => {
         </label>
       </fieldset>
       <button
-        class="oc-button mt-2 w-full"
+        class="oc-button oc-agent-editor-save"
         disabled={saving() || !validation().valid}
         onClick={() => void save()}
       >
@@ -231,7 +231,7 @@ const AgentEditorPanel: Component<AgentEditorPanelProps> = (props) => {
       <Show when={editingAgentName()}>
         {(name) => (
           <button
-            class="oc-button mt-2 w-full text-error"
+            class="oc-button oc-agent-editor-delete text-error"
             onClick={() => props.onDelete(name())}
           >
             删除当前自定义 Agent

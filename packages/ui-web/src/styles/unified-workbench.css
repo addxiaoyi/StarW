@@ -1648,3 +1648,539 @@ body {
     display: none !important;
   }
 }
+
+/* Structural repair: flatten the shell and replace legacy card stacks. */
+.sc-app.is-runtime-mode .sc-workbench {
+  gap: 0;
+  padding: 0 8px 8px;
+}
+
+.sc-app.is-runtime-mode .sc-rail {
+  width: 42px;
+  margin-right: 6px;
+  padding: 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.sc-app.is-runtime-mode .sc-content {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.sc-app.is-runtime-mode:not(.is-inspector-closed) .sc-content {
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+}
+
+.sc-app.is-runtime-mode .sc-inspector {
+  border: 1px solid var(--oc-border);
+  border-left: 1px solid var(--oc-border);
+  border-radius: 0 8px 8px 0;
+  box-shadow: none;
+}
+
+.sc-app.is-runtime-mode .sc-panel-resizer.is-inspector {
+  width: 1px;
+  flex-basis: 1px;
+  margin-inline: -1px;
+}
+
+.sc-app.is-runtime-mode .sc-segmented button {
+  background: transparent;
+  color: var(--oc-text-muted);
+}
+
+.sc-app.is-runtime-mode .sc-segmented button.is-active {
+  background: var(--oc-active);
+  color: var(--oc-text);
+  box-shadow: inset 0 -2px 0 var(--oc-accent);
+}
+
+.oc-section,
+.oc-agent-section {
+  margin: 0;
+  padding: 16px 18px;
+  border: 0 !important;
+  border-bottom: 1px solid var(--oc-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.oc-section-header,
+.oc-inline-notice-header,
+.oc-section-heading,
+.oc-result-row-header,
+.oc-agent-editor-header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.oc-section-header,
+.oc-agent-editor-header {
+  justify-content: space-between;
+}
+
+.oc-section-header > div {
+  min-width: 0;
+}
+
+.oc-section-title {
+  color: var(--oc-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.oc-section-description {
+  display: block;
+  margin-top: 2px;
+  color: var(--oc-text-faint);
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.oc-field {
+  display: block;
+  margin-top: 10px;
+  color: var(--oc-text-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.oc-control,
+.oc-compact-input {
+  width: 100%;
+  min-height: 32px;
+  margin-top: 4px;
+  padding: 0 9px;
+  border: 1px solid var(--oc-border);
+  border-radius: var(--oc-radius-control);
+  background: var(--oc-raised);
+  color: var(--oc-text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.oc-compact-input {
+  width: 160px;
+  min-height: 28px;
+  height: 28px;
+  margin: 0;
+}
+
+.oc-code-input,
+.oc-code-panel {
+  width: 100%;
+  border: 1px solid var(--oc-border) !important;
+  border-radius: 6px !important;
+  background: color-mix(
+    in srgb,
+    var(--oc-shell) 68%,
+    var(--oc-surface)
+  ) !important;
+  color: var(--oc-text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.oc-code-input {
+  min-height: 148px;
+  margin-top: 5px;
+  padding: 10px;
+  resize: vertical;
+}
+
+.oc-code-input.is-compact {
+  min-height: 72px;
+}
+
+.oc-code-input.is-tall {
+  min-height: 256px;
+}
+
+.oc-code-panel {
+  max-height: 288px;
+  overflow: auto;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+
+.oc-code-panel.is-compact {
+  max-height: 144px;
+  padding: 8px;
+}
+
+.oc-code-panel.is-compare {
+  max-height: 224px;
+  margin-top: 5px;
+  font-size: 10px;
+}
+
+.oc-code-panel.is-result {
+  min-height: 160px;
+  flex: 1;
+}
+
+.oc-field-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.oc-field-grid.is-two,
+.oc-compare-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.oc-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 10px;
+  color: var(--oc-text-faint);
+  font-size: 10px;
+}
+
+.oc-result-grid {
+  display: grid;
+  gap: 0;
+  margin-top: 8px;
+  border-top: 1px solid var(--oc-border);
+}
+
+.oc-result-row {
+  padding: 10px 0;
+  border: 0 !important;
+  border-bottom: 1px solid var(--oc-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.oc-result-row-header {
+  justify-content: space-between;
+}
+
+.oc-result-row-meta {
+  margin-top: 3px;
+  color: var(--oc-text-faint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.oc-inline-notice {
+  padding: 9px 11px;
+  border: 1px solid var(--oc-border);
+  border-radius: 6px;
+  background: var(--oc-raised);
+  color: var(--oc-text-muted);
+  font-size: 12px;
+}
+
+.oc-inline-notice.is-warning {
+  border-color: color-mix(in srgb, var(--oc-warning) 34%, var(--oc-border));
+  background: color-mix(in srgb, var(--oc-warning) 7%, var(--oc-surface));
+}
+
+.oc-inline-notice.is-success {
+  border-color: color-mix(in srgb, var(--oc-success) 32%, var(--oc-border));
+  background: color-mix(in srgb, var(--oc-success) 7%, var(--oc-surface));
+  color: var(--oc-success);
+}
+
+.oc-conflict-panel {
+  margin: 10px 12px 0;
+}
+
+.oc-inline-notice-header {
+  flex-wrap: wrap;
+}
+
+.oc-conflict-details {
+  margin-top: 8px;
+}
+
+.oc-conflict-details > summary {
+  cursor: pointer;
+  color: var(--oc-text-muted);
+  font-size: 10px;
+}
+
+.oc-compare-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.oc-file-entry {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--oc-border) 58%, transparent);
+}
+
+.oc-file-entry .oc-row-action {
+  opacity: 0;
+  transition: opacity 100ms ease;
+}
+
+.oc-file-entry:hover .oc-row-action,
+.oc-file-entry:focus-within .oc-row-action {
+  opacity: 1;
+}
+
+.oc-inline-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--oc-text-faint);
+  font-size: 10px;
+}
+
+.oc-tool-chip,
+.oc-path-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 1px 6px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--oc-hover);
+  color: var(--oc-text-faint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.oc-agent-editor {
+  margin-top: 10px;
+  padding-top: 10px;
+  border: 0 !important;
+  border-top: 1px solid var(--oc-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.oc-agent-editor-header {
+  min-height: 28px;
+}
+
+.oc-capability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+  margin-top: 10px;
+  padding: 9px 0 0;
+  border: 0;
+  border-top: 1px solid var(--oc-border);
+  color: var(--oc-text-muted);
+  font-size: 10px;
+}
+
+.oc-capability-grid legend {
+  grid-column: 1 / -1;
+  padding: 0 4px 0 0;
+  color: var(--oc-text-faint);
+}
+
+.oc-agent-editor-save,
+.oc-agent-editor-delete {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.oc-agent-prompt {
+  width: 100%;
+  min-height: 96px;
+  margin-top: 10px;
+  padding: 9px;
+  resize: vertical;
+}
+
+.oc-agents-page .agents-runtime-main {
+  padding: 0 !important;
+}
+
+.oc-agents-page .oc-orchestration-panel {
+  padding: 16px 18px;
+}
+
+.oc-section-heading {
+  min-height: 34px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--oc-border);
+}
+
+.oc-section-heading.is-separated {
+  margin-top: 10px;
+  border-top: 1px solid var(--oc-border);
+}
+
+.oc-approval-row,
+.oc-change-row,
+.oc-agent-session-row,
+.oc-swarm-task-row {
+  margin: 0;
+  padding: 11px 0;
+  border: 0 !important;
+  border-bottom: 1px solid var(--oc-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.oc-change-row > summary {
+  cursor: pointer;
+}
+
+.oc-event-panel,
+.oc-output-panel {
+  margin-top: 9px;
+  padding: 9px 10px;
+  border: 1px solid var(--oc-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--oc-shell) 52%, var(--oc-surface));
+}
+
+.oc-output-panel.is-live {
+  border-color: color-mix(in srgb, var(--oc-accent) 30%, var(--oc-border));
+}
+
+.oc-dialog {
+  width: min(440px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid var(--oc-border);
+  border-radius: 10px;
+  background: var(--oc-raised);
+  box-shadow: 0 24px 72px rgb(0 0 0 / 30%);
+}
+
+.oc-mcp-server {
+  margin: 0;
+  padding: 10px 4px;
+  border: 0 !important;
+  border-bottom: 1px solid var(--oc-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.oc-mcp-server:hover {
+  background: color-mix(in srgb, var(--oc-hover) 70%, transparent) !important;
+}
+
+.oc-browser-body {
+  align-items: flex-start !important;
+  padding-top: clamp(48px, 11vh, 96px) !important;
+  background: var(--oc-surface);
+}
+
+.oc-browser-launcher {
+  max-width: 640px !important;
+  padding: 0;
+}
+
+.oc-browser-launcher > .oc-context-kicker {
+  margin-bottom: 10px;
+}
+
+.oc-browser-launcher > svg {
+  display: none;
+}
+
+.oc-browser-launcher h1 {
+  margin-top: 0;
+  font-size: 18px;
+  line-height: 24px;
+}
+
+.oc-browser-launcher > p {
+  max-width: 540px;
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.oc-browser-urlbar {
+  margin-top: 16px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.oc-settings-content > .oc-inline-notice {
+  margin-bottom: 16px;
+}
+
+@media (max-width: 980px) {
+  .sc-app.is-runtime-mode .sc-workbench {
+    padding: 0 6px 6px;
+  }
+
+  .oc-field-grid.is-two,
+  .oc-compare-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .sc-app.is-runtime-mode .sc-rail {
+    width: 38px;
+    margin-right: 4px;
+  }
+
+  .oc-file-entry .oc-row-action {
+    opacity: 1;
+  }
+
+  .oc-section,
+  .oc-agent-section,
+  .oc-agents-page .oc-orchestration-panel {
+    padding-inline: 12px;
+  }
+
+  .oc-section-heading {
+    padding-inline: 12px;
+  }
+}
+
+/* Final specificity repair for semantic runtime surfaces. */
+.oc-agents-page .agents-runtime-main > .oc-section,
+.oc-agents-page .agents-runtime-main > .oc-agent-section {
+  margin: 0;
+  padding: 16px 18px;
+  border: 0 !important;
+  border-bottom: 1px solid var(--oc-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.oc-settings-content > section.oc-settings-section {
+  margin: 0 !important;
+  padding: 16px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--oc-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.oc-settings-content > section.oc-settings-section:last-child {
+  border-bottom: 0 !important;
+}
+
+.oc-browser-launcher > [data-component="icon"] {
+  display: none;
+}
+
+.oc-capability-legend {
+  grid-column: 1 / -1;
+  color: var(--oc-text-faint);
+}
+
+.oc-agent-editor .oc-control,
+.oc-settings-section .oc-control {
+  display: block;
+}
