@@ -410,12 +410,12 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
 
   return (
     <section class="oc-runtime-page oc-files-page flex h-full min-h-0 flex-col">
-      <header class="oc-page-header files-runtime-toolbar runtime-toolbar">
-        <div class="oc-page-heading">
-          <strong>Files</strong>
-          <small title={currentPath()}>{currentPath()}</small>
+      <div class="oc-files-commandbar">
+        <div class="oc-files-location">
+          <span class="oc-context-kicker">Workspace files</span>
+          <strong title={currentPath()}>{currentPath()}</strong>
         </div>
-        <div class="oc-page-actions">
+        <div class="oc-files-actions">
           <button
             class="oc-button"
             disabled={currentPath() === "." || directoryLoading()}
@@ -432,7 +432,7 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
             {directoryLoading() ? "刷新中…" : "刷新"}
           </button>
           <button class="oc-button" onClick={() => void selectWorkspace()}>
-            选择工作区
+            切换工作区
           </button>
           <button class="oc-button" onClick={() => void createEntry("file")}>
             新建文件
@@ -445,7 +445,7 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
           </button>
           <Show when={selectedPath()}>
             <button
-              class="oc-button oc-button-primary"
+              class="oc-button oc-button-primary oc-browser-submit"
               disabled={!dirty() || saving() || readOnly()}
               onClick={() => void saveFile()}
             >
@@ -453,7 +453,7 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
             </button>
           </Show>
         </div>
-      </header>
+      </div>
       <Show when={error()}>
         <div class="p-3">
           <ErrorNotice message={error()} />
@@ -520,7 +520,7 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
                 <div class="flex items-center border-b border-border/50">
                   <button
                     type="button"
-                    class="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+                    class="oc-file-row"
                     classList={{ "bg-muted": selectedPath() === entry.path }}
                     aria-current={
                       selectedPath() === entry.path ? "page" : undefined
@@ -576,7 +576,7 @@ export const FilesRuntimeView: Component<RuntimeViewProps> = (props) => {
             }
           >
             <div class="flex h-full min-h-0 flex-col">
-              <div class="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2 font-mono text-xs text-muted-foreground">
+              <div class="oc-file-tabbar">
                 <span class="min-w-0 flex-1 truncate" title={selectedPath()}>
                   {selectedPath()}
                 </span>
@@ -979,19 +979,27 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = () => {
 
   return (
     <section class="oc-runtime-page oc-agents-page flex h-full min-h-0 flex-col">
-      <header class="oc-page-header flex items-center gap-2">
-        <div class="oc-page-heading">
-          <strong>Agents / Swarm</strong>
-          <small>定义 Agent、审批工具调用并检查持久化执行轨迹</small>
+      <div class="oc-agents-commandbar">
+        <div class="oc-agents-identity">
+          <span class="oc-context-kicker">Orchestration</span>
+          <strong>Agents</strong>
+          <small>定义角色、审批高风险工具并追踪真实执行</small>
         </div>
-        <button
-          class="oc-button"
-          disabled={refreshing()}
-          onClick={() => void refresh()}
-        >
-          {refreshing() ? "刷新中…" : "刷新"}
-        </button>
-      </header>
+        <div class="oc-agents-summary" aria-label="Agent 运行摘要">
+          <span>{agents().length} agents</span>
+          <span>{sessions().length} sessions</span>
+          <Show when={approvals().length > 0}>
+            <span class="is-warning">{approvals().length} approvals</span>
+          </Show>
+          <button
+            class="oc-button"
+            disabled={refreshing()}
+            onClick={() => void refresh()}
+          >
+            {refreshing() ? "刷新中…" : "刷新"}
+          </button>
+        </div>
+      </div>
       <Show when={error()}>
         <div class="p-3">
           <ErrorNotice message={error()} />
@@ -1005,7 +1013,7 @@ export const AgentsRuntimeView: Component<RuntimeViewProps> = () => {
           <For each={agents()}>
             {(agent) => (
               <button
-                class="mb-2 block w-full rounded-md border border-border p-3 text-left"
+                class="oc-agent-row"
                 classList={{
                   "border-ring bg-muted": selectedAgent() === agent.name,
                 }}
@@ -1627,24 +1635,26 @@ export const SkillsRuntimeView: Component = () => {
 
   return (
     <section class="oc-runtime-page oc-skills-page flex h-full min-h-0 flex-col">
-      <header class="oc-page-header">
-        <div class="oc-page-heading">
-          <strong>Skills</strong>
-          <small>浏览、配置并执行工作区与内置工具</small>
-        </div>
-        <button
-          class="oc-button"
-          disabled={loading()}
-          onClick={() => void load()}
-        >
-          {loading() ? "加载中…" : "刷新"}
-        </button>
-      </header>
       <div class="oc-page-body runtime-split skills-runtime grid min-h-0 flex-1 grid-cols-[300px_minmax(0,1fr)]">
         <aside
           class="runtime-sidebar skills-runtime-sidebar overflow-auto border-r border-border p-3"
           aria-busy={loading()}
         >
+          <div class="oc-catalog-header">
+            <div>
+              <span class="oc-context-kicker">Tool catalog</span>
+              <strong>Skills</strong>
+            </div>
+            <button
+              class="sc-icon-button"
+              disabled={loading()}
+              aria-label="刷新 Skills"
+              title="刷新 Skills"
+              onClick={() => void load()}
+            >
+              <Icon name="reset" size="small" />
+            </button>
+          </div>
           <Show
             when={!loading() && skills().length > 0}
             fallback={
@@ -1661,7 +1671,7 @@ export const SkillsRuntimeView: Component = () => {
             <For each={skills()}>
               {(skill) => (
                 <button
-                  class="mb-2 block w-full rounded-md border border-border p-3 text-left"
+                  class="oc-skill-row"
                   classList={{
                     "border-ring bg-muted": selected() === skill.name,
                   }}
@@ -1692,7 +1702,7 @@ export const SkillsRuntimeView: Component = () => {
           >
             {(skill) => (
               <>
-                <header class="flex flex-wrap items-center gap-2">
+                <header class="oc-detail-header">
                   <div class="min-w-0 flex-1">
                     <strong>执行 /{skill().name}</strong>
                     <p class="text-xs text-muted-foreground">
@@ -1967,19 +1977,6 @@ export const McpRuntimeView: Component<RuntimeViewProps> = (props) => {
 
   return (
     <section class="oc-runtime-page oc-mcp-page flex h-full min-h-0 flex-col">
-      <header class="oc-page-header flex items-center gap-2">
-        <div class="oc-page-heading">
-          <strong>MCP Servers</strong>
-          <small>管理连接、检查工具并执行结构化调用</small>
-        </div>
-        <button
-          class="oc-button"
-          disabled={busy()}
-          onClick={() => void load(true)}
-        >
-          同步连接
-        </button>
-      </header>
       <Show when={error()}>
         <div class="p-3">
           <ErrorNotice message={error()} />
@@ -1987,6 +1984,21 @@ export const McpRuntimeView: Component<RuntimeViewProps> = (props) => {
       </Show>
       <div class="oc-page-body runtime-split mcp-runtime grid min-h-0 flex-1 grid-cols-[360px_minmax(0,1fr)]">
         <aside class="runtime-sidebar mcp-runtime-sidebar overflow-auto border-r border-border p-3">
+          <div class="oc-catalog-header">
+            <div>
+              <span class="oc-context-kicker">Connected tools</span>
+              <strong>MCP Servers</strong>
+            </div>
+            <button
+              class="sc-icon-button"
+              disabled={busy()}
+              aria-label="同步 MCP 连接"
+              title="同步 MCP 连接"
+              onClick={() => void load(true)}
+            >
+              <Icon name="reset" size="small" />
+            </button>
+          </div>
           <Show
             when={servers().length}
             fallback={
@@ -1998,7 +2010,7 @@ export const McpRuntimeView: Component<RuntimeViewProps> = (props) => {
           >
             <For each={servers()}>
               {(server) => (
-                <article class="mb-3 rounded-md border border-border p-3">
+                <article class="oc-mcp-server">
                   <header class="flex items-center gap-2">
                     <strong class="min-w-0 flex-1 truncate">
                       {server.name}
@@ -2040,7 +2052,7 @@ export const McpRuntimeView: Component<RuntimeViewProps> = (props) => {
                   <For each={server.tools}>
                     {(tool) => (
                       <button
-                        class="mt-2 block w-full rounded border border-border px-2 py-1 text-left text-xs"
+                        class="oc-mcp-tool-row"
                         classList={{
                           "border-ring bg-muted":
                             selectedServer() === server.id &&
@@ -2082,9 +2094,13 @@ export const McpRuntimeView: Component<RuntimeViewProps> = (props) => {
               />
             }
           >
-            <strong>
-              {selectedServer()} / {selectedTool()}
-            </strong>
+            <header class="oc-detail-header">
+              <div>
+                <span class="oc-context-kicker">MCP tool</span>
+                <strong>{selectedTool()}</strong>
+                <small>{selectedServer()}</small>
+              </div>
+            </header>
             <SchemaArgumentsEditor
               schema={selectedMcpTool()?.inputSchema}
               value={argumentsText()}
@@ -2158,22 +2174,17 @@ export const BrowserRuntimeView: Component = () => {
 
   return (
     <section class="oc-runtime-page oc-browser-page flex h-full min-h-0 flex-col">
-      <header class="oc-page-header">
-        <div class="oc-page-heading">
-          <strong>外部网址</strong>
-          <small>通过系统浏览器安全打开 HTTP/HTTPS 地址</small>
-        </div>
-      </header>
-      <div class="oc-browser-body oc-page-body flex items-center justify-center p-8">
-        <div class="oc-focus-card w-full max-w-2xl rounded-lg border border-border bg-card p-6">
+      <div class="oc-browser-body flex min-h-0 flex-1 items-center justify-center p-6">
+        <div class="oc-browser-launcher w-full max-w-2xl">
+          <span class="oc-context-kicker">System browser</span>
           <Icon name="window-cursor" size="large" />
-          <h1 class="mt-3 text-xl font-semibold">打开外部网址</h1>
-          <p class="mt-2 text-sm text-muted-foreground">
+          <h1>打开外部网址</h1>
+          <p>
             地址会经过本地 URL 安全策略校验后，在系统默认浏览器中真实打开。
             内网、localhost、凭据 URL 和非 HTTP 协议会被拒绝。
           </p>
           <form
-            class="mt-5 flex items-end gap-2"
+            class="oc-browser-urlbar"
             onSubmit={(event) => {
               event.preventDefault();
               void open();
@@ -2183,7 +2194,7 @@ export const BrowserRuntimeView: Component = () => {
               HTTP/HTTPS 地址
               <input
                 id="external-url"
-                class="mt-1 w-full rounded-md border border-border bg-background px-3 py-2"
+                class="oc-browser-input"
                 aria-describedby={
                   error() ? "external-url-error" : "external-url-help"
                 }
@@ -2427,302 +2438,329 @@ export const SettingsRuntimeView: Component<RuntimeViewProps> = (props) => {
 
   return (
     <section class="oc-runtime-page oc-settings-page flex h-full min-h-0 flex-col">
-      <header class="oc-page-header oc-settings-header flex items-center justify-between">
-        <div class="oc-page-heading">
-          <strong>Settings</strong>
-          <small>配置保存在便携数据目录，API Key 不会返回给 renderer</small>
-        </div>
-        <div class="flex flex-wrap justify-end gap-2">
-          <button
-            class="oc-button"
-            disabled={!dirty() || saving() || savingMcp()}
-            onClick={revert}
-          >
-            放弃更改
-          </button>
-          <button
-            class="oc-button oc-button-primary"
-            disabled={saving() || savingMcp() || !config() || !mainDirty()}
-            onClick={() => void save()}
-          >
-            {saving() ? "保存中…" : "保存主配置"}
-          </button>
-        </div>
-      </header>
-      <div class="oc-settings-scroll min-h-0 flex-1 overflow-auto">
-        <div class="oc-settings-content mx-auto max-w-4xl space-y-5">
-          <Show when={error()}>
-            <ErrorNotice message={error()} />
-          </Show>
-          <Show when={saved()}>
-            <div class="rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-success">
-              配置已保存并重新加载运行时。
-            </div>
-          </Show>
-          <Show when={config()}>
-            {(value) => (
-              <>
-                <section class="rounded-lg border border-border bg-card p-4">
-                  <h2 class="font-semibold">工作区与外观</h2>
-                  <label class="mt-3 block text-sm">
-                    工作区
-                    <div class="mt-1 flex gap-2">
-                      <input
-                        class="min-w-0 flex-1 rounded border border-border bg-background px-3 py-2"
-                        value={value().workspace}
-                        onInput={(event) =>
+      <div class="oc-settings-layout min-h-0 flex-1">
+        <aside class="oc-settings-nav" aria-label="设置分类">
+          <div class="oc-settings-nav-intro">
+            <span class="oc-context-kicker">Preferences</span>
+            <strong>Settings</strong>
+            <small>运行时、模型、编排与扩展连接</small>
+          </div>
+          <nav>
+            <a href="#settings-general">工作区与外观</a>
+            <a href="#settings-providers">模型 Provider</a>
+            <a href="#settings-swarm">Swarm</a>
+            <a href="#settings-mcp">MCP Servers</a>
+          </nav>
+          <div class="oc-settings-privacy">
+            API Key 仅写入本地加密存储，不会返回 renderer。
+          </div>
+        </aside>
+        <div class="oc-settings-scroll min-h-0 overflow-auto">
+          <div class="oc-settings-content">
+            <header class="oc-settings-lead">
+              <div>
+                <span class="oc-context-kicker">Desktop configuration</span>
+                <h1>偏好设置</h1>
+                <p>按功能分组调整，不改变各工具页面自身的信息架构。</p>
+              </div>
+              <div class="oc-settings-actions">
+                <button
+                  class="oc-button"
+                  disabled={!dirty() || saving() || savingMcp()}
+                  onClick={revert}
+                >
+                  放弃更改
+                </button>
+                <button
+                  class="oc-button oc-button-primary"
+                  disabled={
+                    saving() || savingMcp() || !config() || !mainDirty()
+                  }
+                  onClick={() => void save()}
+                >
+                  {saving() ? "保存中…" : "保存主配置"}
+                </button>
+              </div>
+            </header>
+            <Show when={error()}>
+              <ErrorNotice message={error()} />
+            </Show>
+            <Show when={saved()}>
+              <div class="rounded-md border border-success/40 bg-success/10 px-3 py-2 text-sm text-success">
+                配置已保存并重新加载运行时。
+              </div>
+            </Show>
+            <Show when={config()}>
+              {(value) => (
+                <>
+                  <section id="settings-general" class="oc-settings-section">
+                    <h2 class="font-semibold">工作区与外观</h2>
+                    <label class="mt-3 block text-sm">
+                      工作区
+                      <div class="mt-1 flex gap-2">
+                        <input
+                          class="min-w-0 flex-1 rounded border border-border bg-background px-3 py-2"
+                          value={value().workspace}
+                          onInput={(event) =>
+                            setConfig({
+                              ...value(),
+                              workspace: event.currentTarget.value,
+                            })
+                          }
+                        />
+                        <button
+                          class="oc-button"
+                          onClick={() => void pickWorkspace()}
+                        >
+                          选择并立即应用
+                        </button>
+                      </div>
+                    </label>
+                    <label class="mt-3 block text-sm">
+                      主题
+                      <select
+                        class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                        value={value().theme}
+                        onChange={(event) =>
                           setConfig({
                             ...value(),
-                            workspace: event.currentTarget.value,
+                            theme: event.currentTarget
+                              .value as PublicConfig["theme"],
                           })
                         }
-                      />
-                      <button
-                        class="oc-button"
-                        onClick={() => void pickWorkspace()}
                       >
-                        选择并立即应用
+                        <option value="dark">深色</option>
+                        <option value="light">浅色</option>
+                        <option value="auto">跟随系统</option>
+                      </select>
+                    </label>
+                  </section>
+
+                  <section id="settings-providers" class="oc-settings-section">
+                    <h2 class="font-semibold">模型 Provider</h2>
+                    <label class="mt-3 block text-sm">
+                      默认 Provider
+                      <select
+                        class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                        value={value().selectedProvider}
+                        onChange={(event) =>
+                          setConfig({
+                            ...value(),
+                            selectedProvider: event.currentTarget
+                              .value as PublicConfig["selectedProvider"],
+                          })
+                        }
+                      >
+                        <For each={providerIds}>
+                          {(id) => <option value={id}>{id}</option>}
+                        </For>
+                      </select>
+                    </label>
+                    <For each={providerIds}>
+                      {(id) => {
+                        const provider = () => config()!.providers[id];
+                        return (
+                          <div class="oc-provider-row">
+                            <div class="flex items-center gap-2">
+                              <strong class="capitalize">{id}</strong>
+                              <span class="text-xs text-muted-foreground">
+                                {provider().configured
+                                  ? `已配置 ${provider().apiKeyHint}`
+                                  : "未配置"}
+                              </span>
+                              <label class="ml-auto flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={provider().enabled}
+                                  onChange={(event) =>
+                                    updateProvider(id, {
+                                      enabled: event.currentTarget.checked,
+                                    })
+                                  }
+                                />
+                                启用
+                              </label>
+                            </div>
+                            <div class="mt-3 grid gap-3 md:grid-cols-2">
+                              <label class="text-sm">
+                                Base URL
+                                <input
+                                  class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                                  value={provider().baseUrl}
+                                  onInput={(event) =>
+                                    updateProvider(id, {
+                                      baseUrl: event.currentTarget.value,
+                                    })
+                                  }
+                                />
+                              </label>
+                              <label class="text-sm">
+                                模型
+                                <input
+                                  class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                                  value={provider().model}
+                                  onInput={(event) =>
+                                    updateProvider(id, {
+                                      model: event.currentTarget.value,
+                                    })
+                                  }
+                                  placeholder="必须明确填写模型名称"
+                                />
+                              </label>
+                            </div>
+                            <label class="mt-3 block text-sm">
+                              API Key
+                              <input
+                                type="password"
+                                class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                                value={provider().apiKey || ""}
+                                onInput={(event) =>
+                                  updateProvider(id, {
+                                    apiKey: event.currentTarget.value,
+                                  })
+                                }
+                                placeholder={
+                                  provider().configured
+                                    ? "留空保留已保存密钥"
+                                    : "输入 API Key"
+                                }
+                              />
+                            </label>
+                            <Show
+                              when={
+                                provider().configured ||
+                                typeof provider().apiKey === "string"
+                              }
+                            >
+                              <div class="mt-2 flex items-center justify-between gap-3 text-xs">
+                                <span class="text-muted-foreground">
+                                  {provider().apiKey === null
+                                    ? "保存配置后将清除此密钥"
+                                    : "密钥仅写入加密存储，不会回传到界面"}
+                                </span>
+                                <button
+                                  type="button"
+                                  class="oc-button text-error"
+                                  onClick={() =>
+                                    updateProvider(id, { apiKey: null })
+                                  }
+                                >
+                                  清除密钥
+                                </button>
+                              </div>
+                            </Show>
+                          </div>
+                        );
+                      }}
+                    </For>
+                  </section>
+
+                  <section id="settings-swarm" class="oc-settings-section">
+                    <h2 class="font-semibold">Swarm</h2>
+                    <div class="mt-3 grid gap-3 md:grid-cols-3">
+                      <label class="text-sm">
+                        Workers
+                        <input
+                          type="number"
+                          min="1"
+                          max="32"
+                          class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                          value={value().swarm.maxWorkers}
+                          onInput={(event) =>
+                            setConfig({
+                              ...value(),
+                              swarm: {
+                                ...value().swarm,
+                                maxWorkers: Number(event.currentTarget.value),
+                              },
+                            })
+                          }
+                        />
+                      </label>
+                      <label class="text-sm">
+                        并发
+                        <input
+                          type="number"
+                          min="1"
+                          max="32"
+                          class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                          value={value().swarm.maxConcurrency}
+                          onInput={(event) =>
+                            setConfig({
+                              ...value(),
+                              swarm: {
+                                ...value().swarm,
+                                maxConcurrency: Number(
+                                  event.currentTarget.value,
+                                ),
+                              },
+                            })
+                          }
+                        />
+                      </label>
+                      <label class="text-sm">
+                        任务超时（ms）
+                        <input
+                          type="number"
+                          min="1000"
+                          class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
+                          value={value().swarm.taskTimeoutMs}
+                          onInput={(event) =>
+                            setConfig({
+                              ...value(),
+                              swarm: {
+                                ...value().swarm,
+                                taskTimeoutMs: Number(
+                                  event.currentTarget.value,
+                                ),
+                              },
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
+                  </section>
+
+                  <section id="settings-mcp" class="oc-settings-section">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <div>
+                        <h2 class="font-semibold">MCP stdio Servers</h2>
+                        <p class="mt-1 text-xs text-muted-foreground">
+                          JSON
+                          数组字段：id、name、command、args、cwd、env、enabled。
+                        </p>
+                      </div>
+                      <span class="flex-1" />
+                      <button
+                        class="oc-button oc-button-primary"
+                        disabled={savingMcp() || saving() || !mcpDirty()}
+                        onClick={() => void saveMcp()}
+                      >
+                        {savingMcp() ? "保存 MCP 中…" : "单独保存 MCP"}
                       </button>
                     </div>
-                  </label>
-                  <label class="mt-3 block text-sm">
-                    主题
-                    <select
-                      class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-                      value={value().theme}
-                      onChange={(event) =>
-                        setConfig({
-                          ...value(),
-                          theme: event.currentTarget
-                            .value as PublicConfig["theme"],
-                        })
-                      }
-                    >
-                      <option value="dark">深色</option>
-                      <option value="light">浅色</option>
-                      <option value="auto">跟随系统</option>
-                    </select>
-                  </label>
-                </section>
-
-                <section class="rounded-lg border border-border bg-card p-4">
-                  <h2 class="font-semibold">模型 Provider</h2>
-                  <label class="mt-3 block text-sm">
-                    默认 Provider
-                    <select
-                      class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-                      value={value().selectedProvider}
-                      onChange={(event) =>
-                        setConfig({
-                          ...value(),
-                          selectedProvider: event.currentTarget
-                            .value as PublicConfig["selectedProvider"],
-                        })
-                      }
-                    >
-                      <For each={providerIds}>
-                        {(id) => <option value={id}>{id}</option>}
-                      </For>
-                    </select>
-                  </label>
-                  <For each={providerIds}>
-                    {(id) => {
-                      const provider = () => config()!.providers[id];
-                      return (
-                        <div class="mt-4 rounded border border-border p-3">
-                          <div class="flex items-center gap-2">
-                            <strong class="capitalize">{id}</strong>
-                            <span class="text-xs text-muted-foreground">
-                              {provider().configured
-                                ? `已配置 ${provider().apiKeyHint}`
-                                : "未配置"}
-                            </span>
-                            <label class="ml-auto flex items-center gap-2 text-sm">
-                              <input
-                                type="checkbox"
-                                checked={provider().enabled}
-                                onChange={(event) =>
-                                  updateProvider(id, {
-                                    enabled: event.currentTarget.checked,
-                                  })
-                                }
-                              />
-                              启用
-                            </label>
-                          </div>
-                          <div class="mt-3 grid gap-3 md:grid-cols-2">
-                            <label class="text-sm">
-                              Base URL
-                              <input
-                                class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-                                value={provider().baseUrl}
-                                onInput={(event) =>
-                                  updateProvider(id, {
-                                    baseUrl: event.currentTarget.value,
-                                  })
-                                }
-                              />
-                            </label>
-                            <label class="text-sm">
-                              模型
-                              <input
-                                class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-                                value={provider().model}
-                                onInput={(event) =>
-                                  updateProvider(id, {
-                                    model: event.currentTarget.value,
-                                  })
-                                }
-                                placeholder="必须明确填写模型名称"
-                              />
-                            </label>
-                          </div>
-                          <label class="mt-3 block text-sm">
-                            API Key
-                            <input
-                              type="password"
-                              class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-                              value={provider().apiKey || ""}
-                              onInput={(event) =>
-                                updateProvider(id, {
-                                  apiKey: event.currentTarget.value,
-                                })
-                              }
-                              placeholder={
-                                provider().configured
-                                  ? "留空保留已保存密钥"
-                                  : "输入 API Key"
-                              }
-                            />
-                          </label>
-                          <Show
-                            when={
-                              provider().configured ||
-                              typeof provider().apiKey === "string"
-                            }
-                          >
-                            <div class="mt-2 flex items-center justify-between gap-3 text-xs">
-                              <span class="text-muted-foreground">
-                                {provider().apiKey === null
-                                  ? "保存配置后将清除此密钥"
-                                  : "密钥仅写入加密存储，不会回传到界面"}
-                              </span>
-                              <button
-                                type="button"
-                                class="oc-button text-error"
-                                onClick={() =>
-                                  updateProvider(id, { apiKey: null })
-                                }
-                              >
-                                清除密钥
-                              </button>
-                            </div>
-                          </Show>
-                        </div>
-                      );
-                    }}
-                  </For>
-                </section>
-
-                <section class="rounded-lg border border-border bg-card p-4">
-                  <h2 class="font-semibold">Swarm</h2>
-                  <div class="mt-3 grid gap-3 md:grid-cols-3">
-                    <label class="text-sm">
-                      Workers
-                      <input
-                        type="number"
-                        min="1"
-                        max="32"
-                        class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-                        value={value().swarm.maxWorkers}
+                    <label class="mt-3 block text-sm" for="settings-mcp-json">
+                      MCP Server JSON
+                      <textarea
+                        id="settings-mcp-json"
+                        class="mt-1 h-64 w-full resize-y rounded border border-border bg-background p-3 font-mono text-xs"
+                        aria-describedby="settings-mcp-help"
+                        value={mcpText()}
                         onInput={(event) =>
-                          setConfig({
-                            ...value(),
-                            swarm: {
-                              ...value().swarm,
-                              maxWorkers: Number(event.currentTarget.value),
-                            },
-                          })
+                          setMcpText(event.currentTarget.value)
                         }
+                        spellcheck={false}
                       />
                     </label>
-                    <label class="text-sm">
-                      并发
-                      <input
-                        type="number"
-                        min="1"
-                        max="32"
-                        class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-                        value={value().swarm.maxConcurrency}
-                        onInput={(event) =>
-                          setConfig({
-                            ...value(),
-                            swarm: {
-                              ...value().swarm,
-                              maxConcurrency: Number(event.currentTarget.value),
-                            },
-                          })
-                        }
-                      />
-                    </label>
-                    <label class="text-sm">
-                      任务超时（ms）
-                      <input
-                        type="number"
-                        min="1000"
-                        class="mt-1 w-full rounded border border-border bg-background px-3 py-2"
-                        value={value().swarm.taskTimeoutMs}
-                        onInput={(event) =>
-                          setConfig({
-                            ...value(),
-                            swarm: {
-                              ...value().swarm,
-                              taskTimeoutMs: Number(event.currentTarget.value),
-                            },
-                          })
-                        }
-                      />
-                    </label>
-                  </div>
-                </section>
-
-                <section class="rounded-lg border border-border bg-card p-4">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <div>
-                      <h2 class="font-semibold">MCP stdio Servers</h2>
-                      <p class="mt-1 text-xs text-muted-foreground">
-                        JSON
-                        数组字段：id、name、command、args、cwd、env、enabled。
-                      </p>
-                    </div>
-                    <span class="flex-1" />
-                    <button
-                      class="oc-button oc-button-primary"
-                      disabled={savingMcp() || saving() || !mcpDirty()}
-                      onClick={() => void saveMcp()}
-                    >
-                      {savingMcp() ? "保存 MCP 中…" : "单独保存 MCP"}
-                    </button>
-                  </div>
-                  <label class="mt-3 block text-sm" for="settings-mcp-json">
-                    MCP Server JSON
-                    <textarea
-                      id="settings-mcp-json"
-                      class="mt-1 h-64 w-full resize-y rounded border border-border bg-background p-3 font-mono text-xs"
-                      aria-describedby="settings-mcp-help"
-                      value={mcpText()}
-                      onInput={(event) => setMcpText(event.currentTarget.value)}
-                      spellcheck={false}
-                    />
-                  </label>
-                  <small id="settings-mcp-help" class="text-muted-foreground">
-                    此区域独立校验和保存，不会阻止 Provider、主题或 Swarm
-                    配置保存。
-                  </small>
-                </section>
-              </>
-            )}
-          </Show>
+                    <small id="settings-mcp-help" class="text-muted-foreground">
+                      此区域独立校验和保存，不会阻止 Provider、主题或 Swarm
+                      配置保存。
+                    </small>
+                  </section>
+                </>
+              )}
+            </Show>
+          </div>
         </div>
       </div>
     </section>

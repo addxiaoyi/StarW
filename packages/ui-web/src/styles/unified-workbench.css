@@ -853,3 +853,559 @@ body {
     transition: none !important;
   }
 }
+
+/* OpenCode-derived design grammar: shared interaction language, task-specific compositions. */
+
+.oc-context-kicker {
+  display: block;
+  color: var(--oc-text-faint);
+  font-size: 10px;
+  font-weight: 560;
+  line-height: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.oc-files-commandbar,
+.oc-agents-commandbar {
+  display: flex;
+  min-height: 48px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--oc-border);
+  background: var(--oc-surface);
+}
+
+.oc-files-location,
+.oc-agents-identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.oc-files-location strong,
+.oc-agents-identity strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--oc-text);
+  font-size: 13px;
+  font-weight: 530;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.oc-agents-identity small {
+  overflow: hidden;
+  color: var(--oc-text-muted);
+  font-size: 11px;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.oc-files-actions,
+.oc-agents-summary {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.oc-agents-summary > span {
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: var(--oc-hover);
+  color: var(--oc-text-muted);
+  font-size: 11px;
+  line-height: 24px;
+}
+
+.oc-agents-summary > span.is-warning {
+  background: color-mix(in srgb, var(--warning) 13%, transparent);
+  color: var(--warning);
+}
+
+.oc-catalog-header {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -4px -4px 6px;
+  padding: 4px 4px 8px;
+  border-bottom: 1px solid var(--oc-border);
+}
+
+.oc-catalog-header > div {
+  min-width: 0;
+}
+
+.oc-catalog-header strong {
+  display: block;
+  overflow: hidden;
+  color: var(--oc-text);
+  font-size: 13px;
+  font-weight: 530;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.oc-file-row,
+.oc-agent-row,
+.oc-skill-row,
+.oc-mcp-tool-row {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--oc-text);
+  text-align: left;
+  transition:
+    background-color 120ms ease-in-out,
+    color 120ms ease-in-out;
+}
+
+.oc-file-row {
+  display: flex;
+  min-height: 30px;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.oc-agent-row,
+.oc-skill-row {
+  display: block;
+  margin: 0 0 2px;
+  padding: 8px 10px;
+}
+
+.oc-mcp-tool-row {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  margin-top: 2px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.oc-file-row:hover,
+.oc-agent-row:hover,
+.oc-skill-row:hover,
+.oc-mcp-tool-row:hover {
+  background: var(--oc-hover);
+}
+
+.oc-file-row.bg-muted,
+.oc-agent-row.border-ring,
+.oc-skill-row.border-ring,
+.oc-mcp-tool-row.border-ring {
+  background: var(--oc-active) !important;
+  box-shadow: inset 2px 0 0 var(--oc-accent);
+}
+
+.oc-agent-row strong,
+.oc-skill-row strong {
+  font-size: 12px;
+  font-weight: 530;
+}
+
+.oc-agent-row p,
+.oc-skill-row p {
+  margin-top: 2px;
+  color: var(--oc-text-muted);
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.oc-file-tabbar {
+  display: flex;
+  min-height: 36px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--oc-border);
+  background: color-mix(in srgb, var(--oc-surface) 88%, transparent);
+  color: var(--oc-text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.oc-file-tabbar input {
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--oc-hover);
+  box-shadow: none;
+}
+
+.oc-detail-header {
+  display: flex;
+  min-height: 44px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--oc-border);
+}
+
+.oc-detail-header > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.oc-detail-header strong {
+  display: block;
+  overflow: hidden;
+  color: var(--oc-text);
+  font-size: 14px;
+  font-weight: 560;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.oc-detail-header small,
+.oc-detail-header p {
+  color: var(--oc-text-muted);
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.oc-mcp-server {
+  margin-bottom: 4px;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--oc-hover) 52%, transparent);
+}
+
+.oc-mcp-server:hover {
+  background: var(--oc-hover);
+}
+
+.oc-browser-body {
+  background:
+    radial-gradient(
+      circle at 50% 36%,
+      color-mix(in srgb, var(--oc-accent) 7%, transparent),
+      transparent 34%
+    ),
+    var(--oc-surface);
+}
+
+.oc-browser-launcher {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px;
+}
+
+.oc-browser-launcher > .oc-context-kicker {
+  margin-bottom: 24px;
+}
+
+.oc-browser-launcher > svg {
+  color: var(--oc-text-muted);
+}
+
+.oc-browser-launcher h1 {
+  margin-top: 12px;
+  color: var(--oc-text);
+  font-size: 22px;
+  font-weight: 560;
+  line-height: 28px;
+  letter-spacing: -0.025em;
+}
+
+.oc-browser-launcher > p {
+  max-width: 600px;
+  margin-top: 8px;
+  color: var(--oc-text-muted);
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.oc-browser-urlbar {
+  display: flex;
+  width: 100%;
+  align-items: flex-end;
+  gap: 6px;
+  margin-top: 24px;
+  padding: 6px;
+  border: 1px solid var(--oc-border);
+  border-radius: 12px;
+  background: var(--oc-raised);
+  box-shadow: var(--oc-shadow-raised);
+}
+
+.oc-browser-urlbar label {
+  min-width: 0;
+  flex: 1;
+  color: var(--oc-text-muted);
+  font-size: 11px;
+}
+
+.oc-browser-input {
+  width: 100%;
+  height: 36px;
+  margin-top: 3px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  outline: 0;
+  background: var(--oc-hover);
+  color: var(--oc-text);
+  box-shadow: none;
+}
+
+.oc-browser-input:hover,
+.oc-browser-input:focus {
+  background: var(--oc-active);
+  box-shadow: none;
+}
+
+.oc-browser-submit {
+  height: 36px;
+  min-width: 72px;
+}
+
+.oc-settings-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  overflow: hidden;
+  background: var(--oc-surface);
+}
+
+.oc-settings-nav {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  padding: 18px 10px 12px;
+  border-right: 1px solid var(--oc-border);
+  background: color-mix(in srgb, var(--oc-shell) 42%, var(--oc-surface));
+}
+
+.oc-settings-nav-intro {
+  padding: 0 8px 14px;
+}
+
+.oc-settings-nav-intro strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--oc-text);
+  font-size: 15px;
+  font-weight: 560;
+}
+
+.oc-settings-nav-intro small {
+  display: block;
+  margin-top: 4px;
+  color: var(--oc-text-muted);
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.oc-settings-nav nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.oc-settings-nav a {
+  min-height: 32px;
+  padding: 0 9px;
+  border-radius: 6px;
+  color: var(--oc-text-muted);
+  font-size: 12px;
+  line-height: 32px;
+  text-decoration: none;
+}
+
+.oc-settings-nav a:hover,
+.oc-settings-nav a:focus-visible {
+  background: var(--oc-hover);
+  color: var(--oc-text);
+  outline: none;
+}
+
+.oc-settings-privacy {
+  margin-top: auto;
+  padding: 12px 8px 0;
+  color: var(--oc-text-faint);
+  font-size: 10px;
+  line-height: 15px;
+}
+
+.oc-settings-scroll {
+  scroll-behavior: smooth;
+}
+
+.oc-settings-content {
+  width: min(880px, 100%);
+  margin: 0 auto;
+  padding: 28px 32px 52px;
+}
+
+.oc-settings-lead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.oc-settings-lead h1 {
+  margin-top: 3px;
+  color: var(--oc-text);
+  font-size: 22px;
+  font-weight: 560;
+  line-height: 28px;
+  letter-spacing: -0.025em;
+}
+
+.oc-settings-lead p {
+  max-width: 560px;
+  margin-top: 6px;
+  color: var(--oc-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.oc-settings-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.oc-settings-section {
+  scroll-margin-top: 18px;
+  padding: 0 0 28px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--oc-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.oc-settings-content > .oc-settings-section {
+  padding: 0 0 28px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--oc-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.oc-settings-section + .oc-settings-section {
+  padding-top: 28px !important;
+}
+
+.oc-settings-section h2 {
+  color: var(--oc-text) !important;
+  font-size: 14px !important;
+  font-weight: 560 !important;
+  line-height: 18px;
+}
+
+.oc-provider-row {
+  margin-top: 14px;
+  padding: 14px 0 0;
+  border: 0;
+  border-top: 1px solid var(--oc-border);
+}
+
+@media (max-width: 980px) {
+  .oc-files-actions .oc-button:nth-of-type(3),
+  .oc-agents-identity small {
+    display: none;
+  }
+
+  .oc-settings-layout {
+    grid-template-columns: 188px minmax(0, 1fr);
+  }
+
+  .oc-settings-content {
+    padding-inline: 22px;
+  }
+}
+
+@media (max-width: 760px) {
+  .oc-files-commandbar,
+  .oc-agents-commandbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .oc-files-actions,
+  .oc-agents-summary {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .oc-settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .oc-settings-nav {
+    padding: 8px;
+    border-right: 0;
+    border-bottom: 1px solid var(--oc-border);
+  }
+
+  .oc-settings-nav-intro,
+  .oc-settings-privacy {
+    display: none;
+  }
+
+  .oc-settings-nav nav {
+    flex-direction: row;
+    overflow-x: auto;
+  }
+
+  .oc-settings-nav a {
+    flex: 0 0 auto;
+  }
+
+  .oc-settings-content {
+    padding: 20px 14px 40px;
+  }
+
+  .oc-settings-lead {
+    flex-direction: column;
+  }
+
+  .oc-browser-urlbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .oc-browser-submit {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oc-file-row,
+  .oc-agent-row,
+  .oc-skill-row,
+  .oc-mcp-tool-row {
+    transition: none;
+  }
+
+  .oc-settings-scroll {
+    scroll-behavior: auto;
+  }
+}
